@@ -1,0 +1,49 @@
+{
+  "name": "pgpmailer",
+  "author": "Whiteout Networks",
+  "maintainers": [
+    {
+      "name": "Felix Hammerl",
+      "email": "mail@felixhammerl.com"
+    }
+  ],
+  "repository": {
+    "type": "git",
+    "url": "http://github.com/whiteout-io/pgpmailer.git"
+  },
+  "version": "0.0.1",
+  "licenses": [
+    {
+      "type": "MIT",
+      "url": "http://github.com/whiteout-io/pgpmailer/blob/master/LICENSE"
+    }
+  ],
+  "engines": {
+    "node": ">=0.8"
+  },
+  "main": "./src/pgpmailer.js",
+  "scripts": {
+    "test": "grunt"
+  },
+  "dependencies": {
+    "mailbuilder": "https://github.com/whiteout-io/mailbuilder/tarball/master",
+    "openpgp": "~0.3.0"
+  },
+  "devDependencies": {
+    "chai": "~1.8.1",
+    "grunt": "0.4.1",
+    "grunt-contrib-connect": "~0.6.0",
+    "grunt-contrib-jshint": "0.6.4",
+    "grunt-mocha-phantomjs": "~0.4.0",
+    "grunt-mocha-test": "~0.8.1",
+    "mocha": "~1.16.2",
+    "phantomjs": "~1.9.7-1",
+    "requirejs": "~2.1.10",
+    "sinon": "~1.7.3",
+    "sinon-chai": "~2.5.0"
+  },
+  "keywords": [
+    "e-mail",
+    "pgp"
+  ]
+}
