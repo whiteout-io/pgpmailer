@@ -25,29 +25,29 @@ A text/plain mail with attachments is a bit more interesting, it should like thi
 
     envelope stuff ...
     multipart/mixed
-        text/plain
-        application/octet/stream
-        application/octet/stream
-        application/octet/stream
+    |___text/plain
+    |___application/octet/stream
+    |___application/octet/stream
+    |___application/octet/stream
 
 An html-mail is nested even further
 
     envelope stuff ...
     multipart/mixed
-        multipart/alternative
-            text/plain
-            text/html
-        application/octet/stream
-        application/octet/stream
-        application/octet/stream
+    |___multipart/alternative
+    |   |___text/plain
+    |   |___text/html
+    |___application/octet/stream
+    |___application/octet/stream
+    |___application/octet/stream
 
 **NB! text/html is not yet supported, but we're working hard to make it happen**
 
 This lib takes your mail object, creates the MIME-tree, signs and encrypts it, and build a PGP/MIME message that looks like this:
 
     multipart/encrypted
-    |---application/pgp-encrypted
-    |---inline attachment (pgp block)
+    |___application/pgp-encrypted
+    |___inline attachment (pgp block)
 
 ## How do I use this?
 
