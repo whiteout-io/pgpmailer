@@ -232,7 +232,10 @@ define(function(require) {
                 expect(mimeNodeMock.createNode.callCount).to.equal(4);
                 expect(mimeNodeMock.createNode.calledWith([{
                     key: 'Content-Type',
-                    value: 'text/plain'
+                    value: 'text/plain',
+                    parameters: {
+                        charset: 'utf-8'
+                    }
                 }, {
                     key: 'Content-Transfer-Encoding',
                     value: 'quoted-printable'
@@ -252,10 +255,7 @@ define(function(require) {
                 }])).to.be.true;
                 expect(mimeNodeMock.createNode.calledWith([{
                     key: 'Content-Type',
-                    value: 'multipart/encrypted',
-                    parameters: {
-                        protocol: 'application/pgp-encrypted'
-                    }
+                    value: 'application/pgp-encrypted'
                 }, {
                     key: 'Content-Transfer-Encoding',
                     value: '7bit'
@@ -265,10 +265,7 @@ define(function(require) {
                 }])).to.be.true;
                 expect(mimeNodeMock.createNode.calledWith([{
                     key: 'Content-Type',
-                    value: 'application/octet-stream',
-                    parameters: {
-                        protocol: 'application/pgp-encrypted'
-                    }
+                    value: 'application/octet-stream'
                 }, {
                     key: 'Content-Transfer-Encoding',
                     value: '7bit'
