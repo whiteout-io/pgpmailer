@@ -152,10 +152,11 @@ define(function(require) {
     };
 
     PgpMailer.prototype._encrypt = function() {
-        var publicKeys = [],
-            armoredPublicKeys = [],
-            mail = this._current.mail,
+        var mail = this._current.mail,
             builder = this._current.builder,
+            callback = this._current.callback,
+            publicKeys = [],
+            armoredPublicKeys = [],
             plaintext, ciphertext, parentNode;
 
         // prepare the plain text mime nodes
@@ -170,7 +171,8 @@ define(function(require) {
             // decrypt the private key (for signing)
             var privateKey = openpgp.key.readArmored(mail.from.privateKey).keys[0];
             if (!privateKey.decrypt(mail.from.passphrase)) {
-                // callback(error);
+                callback(new Error('Could not decipher the private key!'));
+                return;
             }
 
             // parse the ASCII-armored public keys
@@ -181,7 +183,7 @@ define(function(require) {
             // encrypt the plain text
             ciphertext = openpgp.signAndEncryptMessage(publicKeys, privateKey, plaintext);
         } catch (err) {
-            // callback(ERROR);
+            callback(err);
             return;
         }
 
