@@ -16,6 +16,12 @@ module.exports = function(grunt) {
                     reporter: 'dot'
                 },
                 src: ['test/unit.js']
+            },
+            example: {
+                options: {
+                    reporter: 'dot'
+                },
+                src: ['test/example.js']
             }
         }
 
@@ -55,5 +61,6 @@ module.exports = function(grunt) {
     // Tasks
     // grunt.registerTask('dev', ['connect:dev']);
     // grunt.registerTask('default', ['jshint', 'connect:test', 'mochaTest', 'mocha_phantomjs']);
-    grunt.registerTask('default', ['jshint', 'mochaTest']);
+    grunt.registerTask('default', ['jshint', 'mochaTest:all']);
+    grunt.registerTask('example', ['jshint', 'mochaTest:example']);
 };
