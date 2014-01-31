@@ -19,7 +19,7 @@ define(function(require) {
      * @param {String} options.auth.user Username for login
      * @param {String} options.auth.pass Password for login
      * @param {Boolean} options.secureConnection Indicates if the connection is using TLS or not
-     * @param {String} options.tls Further optional object for tls.connect
+     * @param {String} options.tls Further optional object for tls.connect, e.g. { ca: 'PIN YOUR CA HERE' }
      */
     PgpMailer = function(options, pgp, smtp) {
         this._queue = [];
@@ -27,12 +27,12 @@ define(function(require) {
         this._current = undefined;
 
         this._pgp = pgp || openpgp;
-        this._smtp = (smtp || simplesmtp).connect(options);
+        this._smtp = (smtp || simplesmtp).connect(options.port, options.host, options);
 
         var ready = function() {
-            this._smtp.removeListener('message');
-            this._smtp.removeListener('rcptFailed');
-            this._smtp.removeListener('ready');
+            this._smtp.removeAllListeners('message');
+            this._smtp.removeAllListeners('rcptFailed');
+            this._smtp.removeAllListeners('ready');
             this._busy = false;
             this._processQueue();
         };
@@ -193,7 +193,7 @@ define(function(require) {
             key: 'Content-Type',
             value: 'multipart/encrypted',
             parameters: {
-                protocol: "application/pgp-encrypted"
+                protocol: 'application/pgp-encrypted'
             }
         }, {
             key: 'Content-Transfer-Encoding',
@@ -208,7 +208,7 @@ define(function(require) {
             key: 'Content-Type',
             value: 'multipart/encrypted',
             parameters: {
-                protocol: "application/pgp-encrypted"
+                protocol: 'application/pgp-encrypted'
             }
         }, {
             key: 'Content-Transfer-Encoding',
@@ -223,7 +223,7 @@ define(function(require) {
             key: 'Content-Type',
             value: 'application/octet-stream',
             parameters: {
-                protocol: "application/pgp-encrypted"
+                protocol: 'application/pgp-encrypted'
             }
         }, {
             key: 'Content-Transfer-Encoding',

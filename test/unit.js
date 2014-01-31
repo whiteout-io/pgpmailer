@@ -10,7 +10,7 @@ define(function(require) {
     var sinon = require('sinon'),
         chai = require('chai'),
         expect = chai.expect,
-        PgpMailer = require("../src/pgpmailer"),
+        PgpMailer = require('../src/pgpmailer'),
         Mailbuilder = require('mailbuilder'),
         simplesmtp = require('simplesmtp'),
         openpgp = require('openpgp');
@@ -20,7 +20,7 @@ define(function(require) {
     var SmtpContructorMock = function() {};
     SmtpContructorMock.prototype.on = function() {};
     SmtpContructorMock.prototype.once = function() {};
-    SmtpContructorMock.prototype.removeListener = function() {};
+    SmtpContructorMock.prototype.removeAllListeners = function() {};
     SmtpContructorMock.prototype.useEnvelope = function() {};
     SmtpContructorMock.prototype.end = function() {};
     SmtpContructorMock.prototype.quite = function() {};
@@ -30,6 +30,8 @@ define(function(require) {
         var mailer, builderMock, mimeNodeMock, smtpMock, ready;
 
         beforeEach(function() {
+            var opts;
+
             mimeNodeMock = sinon.createStubInstance(Mailbuilder.Node);
             builderMock = sinon.createStubInstance(Mailbuilder);
             builderMock.node = mimeNodeMock;
@@ -43,9 +45,20 @@ define(function(require) {
                 ready = cb;
             }));
 
-            mailer = new PgpMailer({}, openpgp, simplesmtp);
+            opts = {
+                host: 'hello.world.com',
+                port: 1337,
+                auth: {},
+                secureConnection: true,
+                tls: {
+                    ca: ['trusty cert']
+                }
+            };
 
-            expect(connectStub.called).to.be.true;
+            mailer = new PgpMailer(opts, openpgp, simplesmtp);
+
+            expect(connectStub.calledOnce).to.be.true;
+            expect(connectStub.calledWith(opts.port, opts.host, opts)).to.be.true;
             expect(smtpMock.on.calledWith('idle')).to.be.true;
             expect(smtpMock.on.calledWith('error')).to.be.true;
         });
@@ -198,7 +211,7 @@ define(function(require) {
                     key: 'Content-Type',
                     value: 'multipart/encrypted',
                     parameters: {
-                        protocol: "application/pgp-encrypted"
+                        protocol: 'application/pgp-encrypted'
                     }
                 }, {
                     key: 'Content-Transfer-Encoding',
@@ -241,7 +254,7 @@ define(function(require) {
                     key: 'Content-Type',
                     value: 'multipart/encrypted',
                     parameters: {
-                        protocol: "application/pgp-encrypted"
+                        protocol: 'application/pgp-encrypted'
                     }
                 }, {
                     key: 'Content-Transfer-Encoding',
@@ -254,7 +267,7 @@ define(function(require) {
                     key: 'Content-Type',
                     value: 'application/octet-stream',
                     parameters: {
-                        protocol: "application/pgp-encrypted"
+                        protocol: 'application/pgp-encrypted'
                     }
                 }, {
                     key: 'Content-Transfer-Encoding',
