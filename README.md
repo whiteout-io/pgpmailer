@@ -12,3 +12,8 @@ This module orchestrates the following libraries to send PGP-encrypted messages:
 ## Hands on
 
     npm install && grunt
+
+## Send a test message
+
+    // enter your credentials and keys in test/example.js, then run
+    grunt example
