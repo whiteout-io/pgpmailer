@@ -109,7 +109,10 @@ define(function(require) {
         if (mail.attachments.length === 0) {
             builder.createNode([{
                 key: 'Content-Type',
-                value: 'text/plain'
+                value: 'text/plain',
+                parameters: {
+                    charset: 'utf-8'
+                }
             }, {
                 key: 'Content-Transfer-Encoding',
                 value: 'quoted-printable'
@@ -127,7 +130,10 @@ define(function(require) {
         // create the text/plain node
         parentNode.createNode([{
             key: 'Content-Type',
-            value: 'text/plain'
+            value: 'text/plain',
+            parameters: {
+                charset: 'utf-8'
+            }
         }, {
             key: 'Content-Transfer-Encoding',
             value: 'quoted-printable'
@@ -204,14 +210,12 @@ define(function(require) {
             key: 'Content-Description',
             value: 'OpenPGP encrypted message'
         }]);
+        parentNode.content = 'This is an OpenPGP/MIME encrypted message.';
 
         // set the version info
         parentNode.createNode([{
             key: 'Content-Type',
-            value: 'multipart/encrypted',
-            parameters: {
-                protocol: 'application/pgp-encrypted'
-            }
+            value: 'application/pgp-encrypted'
         }, {
             key: 'Content-Transfer-Encoding',
             value: '7bit'
@@ -223,10 +227,7 @@ define(function(require) {
         // set the ciphertext
         parentNode.createNode([{
             key: 'Content-Type',
-            value: 'application/octet-stream',
-            parameters: {
-                protocol: 'application/pgp-encrypted'
-            }
+            value: 'application/octet-stream'
         }, {
             key: 'Content-Transfer-Encoding',
             value: '7bit'
