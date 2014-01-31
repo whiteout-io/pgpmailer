@@ -27,7 +27,8 @@
   },
   "dependencies": {
     "mailbuilder": "https://github.com/whiteout-io/mailbuilder/tarball/master",
-    "openpgp": "~0.3.0"
+    "openpgp": "~0.3.0",
+    "simplesmtp": "https://github.com/whiteout-io/simplesmtp/tarball/amd"
   },
   "devDependencies": {
     "chai": "~1.8.1",
