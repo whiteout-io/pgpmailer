@@ -282,13 +282,13 @@ define(function(require) {
                         key: 'Content-Type',
                         value: 'multipart/mixed',
                     }]).returns(contentNodeMock);
-                    rootNodeMock.createNode.withArgs({
+                    rootNodeMock.createNode.withArgs([{
                         key: 'Content-Type',
                         value: 'application/pgp-signature'
                     }, {
                         key: 'Content-Transfer-Encoding',
                         value: '7bit'
-                    }).returns(signatureNodeMock);
+                    }]).returns(signatureNodeMock);
                     contentNodeMock.createNode.withArgs([{
                         key: 'Content-Type',
                         value: 'text/plain',

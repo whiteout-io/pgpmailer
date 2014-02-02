@@ -195,13 +195,13 @@ define(function(require) {
         //
 
         openpgp.config.prefer_hash_algorithm = openpgp.enums.hash.sha256;
-        signatureNode = parentNode.createNode({
+        signatureNode = parentNode.createNode([{
             key: 'Content-Type',
             value: 'application/pgp-signature'
         }, {
             key: 'Content-Transfer-Encoding',
             value: '7bit'
-        });
+        }]);
         signatureNode.content = "-----BEGIN PGP SIGNATURE-----" + openpgp.signClearMessage(this._privateKey, contentNode.build()).split("-----BEGIN PGP SIGNATURE-----").pop();
     };
 
