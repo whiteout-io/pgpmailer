@@ -74,8 +74,8 @@ Here's what you do in you own app
 
     });
 
-    mailer.send({
-        publicKeys: ['ASCII ARMORED PUBLIC KEY OF THE SENDER', 'RECEIVER KEY', 'ANOTHER RECEIVER KEY', 'COPY RECEIVER KEY', 'BLINDCOPY RECEIVER KEY'],
+    var armoredPublicKeys = ['ASCII ARMORED PUBLIC KEY OF THE SENDER', 'RECEIVER KEY', 'ANOTHER RECEIVER KEY', 'COPY RECEIVER KEY', 'BLINDCOPY RECEIVER KEY'];
+    var mail = {
         from: 'sender@foobar.com',
         to: ['recipient@foobar.com', 'another_recipient@foobar.com'],
         cc: ['receive.a.copy@foobar.com'],
@@ -87,7 +87,8 @@ Here's what you do in you own app
             fileName: 'a.txt',
             uint8Array: // a UInt8Array that contains your attachment
         }]
-    }, function(error) {
+    };
+    mailer.send(mail, armoredPublicKeys, function(error) {
         // do something useful with the error
     });
 
