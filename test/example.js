@@ -27,27 +27,22 @@ define(function(require) {
                 secureConnection: true,
                 tls: {
                     ca: ['TRUSTY CA']
-                }
+                },
+                privateKey: 'ASCII ARMORED PBKDF2 ENCRYPTED PRIVATE KEY',
+                passphrase: 'PASSPHRASE'
             });
 
             var mail = {
-                from: {
-                    address: 'SENDER',
-                    publicKey: 'ASCII ARMORED PUBLIC KEY',
-                    privateKey: 'ASCII ARMORED PBKDF2 ENCRYPTED PRIVATE KEY',
-                    passphrase: 'PASSWORD'
-                },
-                to: [{
-                    address: 'RECIPIENT',
-                    publicKey: 'ASCII ARMORED PUBLIC KEY'
-                }],
-                cc: [],
-                bcc: [],
+                publicKeys: ['ASCII ARMORED PUBLIC KEY OF THE SENDER', 'FIRST RECEIVER KEY', 'ANOTHER RECEIVER KEY', 'COPY RECEIVER KEY', 'BLINDCOPY RECEIVER KEY'],
+                from: 'sender@foobar.com',
+                to: ['recipient@foobar.com', 'another_recipient@foobar.com'],
+                cc: ['receive.a.copy@foobar.com'],
+                bcc: ['blindcopy@foobar.com'],
                 subject: 'hello, pgp',
                 text: 'hello, world!',
                 attachments: [{
                     contentType: 'text/plain',
-                    fileName: 'a.txt',
+                    fileName: 'foobar.txt',
                     uint8Array: utf16ToUInt8Array('I AM THE MIGHTY ATTACHMENT!')
                 }]
             };

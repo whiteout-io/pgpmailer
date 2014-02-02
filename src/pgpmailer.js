@@ -13,18 +13,35 @@ define(function(require) {
         PgpMailer;
 
     /**
-     * Constructor for the high level api. Will fire up the SMTP connection as soon as it is invoked
+     * Constructor for the high level api. Will fire up the SMTP connection as soon as it is invoked.
+     * NB! The constructor will invoke options.onError and return undefined if there is an error while decrypting the private key.
      * @param {Number} options.port Port is the port to the server (defaults to 25 on non-secure and to 465 on secure connection).
      * @param {String} options.host Hostname of the server.
      * @param {String} options.auth.user Username for login
      * @param {String} options.auth.pass Password for login
      * @param {Boolean} options.secureConnection Indicates if the connection is using TLS or not
      * @param {String} options.tls Further optional object for tls.connect, e.g. { ca: 'PIN YOUR CA HERE' }
+     * @param {String} options.privateKey ASCII-armored PBKDF2-encrypted private key to sign the messages
+     * @param {String} options.passphrase The passphrase to encrypt options.armoredPrivateKey
+     * @param {String} options.onError Top-level error handler with information if an error occurred
      */
     PgpMailer = function(options, pgp, smtp) {
         this._queue = [];
         this._busy = true;
         this._current = undefined;
+
+        try {
+            // decrypt the private key (for signing)
+            var privateKey = openpgp.key.readArmored(options.privateKey).keys[0];
+            if (!privateKey.decrypt(options.passphrase)) {
+                options.onError(new Error('Could not decrypt the private key!'));
+                return;
+            }
+            this._privateKey = privateKey;
+        } catch (err) {
+            options.onError(err);
+            return;
+        }
 
         this._pgp = pgp || openpgp;
         this._smtp = (smtp || simplesmtp).connect(options.port, options.host, options);
@@ -39,20 +56,20 @@ define(function(require) {
 
         // ready, waiting for an envelope
         this._smtp.on('idle', ready.bind(this));
-        this._smtp.on('error', console.error);
+        this._smtp.on('error', options.onError);
     };
 
     /**
      * Queues a mail object for sending.
-     * @param  {Object} mail.from Object with the ASCII string representing the sender address and the corresponding ASCII armored key pair and the passphrase to encrypt the private key, e.g. { address: 'foo@bar.io', privateKey: '...', publicKey: '...', passphrase: 'tralalala'}
-     * @param  {Array} mail.to Array of objects with the ASCII string representing the recipient and the corresponding ASCII armored public key (e.g. [{ address: 'the.dude@lebowski.com', publicKey: '...' }, { address: 'donny@kerabatsos.com', publicKey: '...' }])
-     * @param  {Object} mail.cc Array of objects with the ASCII string representing the recipient and the corresponding ASCII armored public key, see mail.to
-     * @param  {Object} mail.bcc Array of objects with the ASCII string representing the recipient and the corresponding ASCII armored public key, see mail.to
-     * @param  {String} mail.subject String containing with the mail's subject
-     * @param  {Array} mail.headers Array of objects with key and value for additional headers, e.g. [{'X-Tralala': 'some-stuff']
-     * @param  {String} mail.text Plain text to be sent with the mail
-     * @param  {Array} mail.attachments Array of attachment objects with fileName {String}, uint8Array {Uint8Array}, and contentType {String}
-     * @param  {Function} callback(error) Indicates that the mail has been sent, or gives information in case an error occurred.
+     * @param {Object} mail.from Object with the ASCII string representing the sender address, e.g. 'foo@bar.io'
+     * @param {Array} mail.to Array of objects with the ASCII string representing the recipient (e.g. ['the.dude@lebowski.com', 'donny@kerabatsos.com'])
+     * @param {Object} mail.cc Array of objects with the ASCII string representing the recipient, see mail.to
+     * @param {Object} mail.bcc Array of objects with the ASCII string representing the recipient, see mail.to
+     * @param {Array} mail.publicKeys The public keys with which the message should be encrypted
+     * @param {String} mail.subject String containing with the mail's subject
+     * @param {String} mail.text Plain text to be sent with the mail
+     * @param {Array} mail.attachments Array of attachment objects with fileName {String}, uint8Array {Uint8Array}, and contentType {String}
+     * @param {Function} callback(error) Indicates that the mail has been sent, or gives information in case an error occurred.
      */
     PgpMailer.prototype.send = function(mail, callback, builder) {
         this._queue.push({
@@ -79,7 +96,7 @@ define(function(require) {
     PgpMailer.prototype._createMimeTree = function() {
         var mail = this._current.mail,
             builder = this._current.builder,
-            parentNode;
+            parentNode, contentNode, signatureNode;
 
 
         // 
@@ -89,25 +106,62 @@ define(function(require) {
         builder.setSubject(mail.subject);
 
         // add everyone's addresses
-        builder.setFrom(mail.from.address);
-        mail.to.forEach(function(recipient) {
-            builder.addTo(recipient.address);
-        });
-        mail.cc.forEach(function(recipient) {
-            builder.addCc(recipient.address);
-        });
-        mail.bcc.forEach(function(recipient) {
-            builder.addBcc(recipient.address);
-        });
+        builder.setFrom(mail.from.address || mail.from);
+
+        if (mail.to) {
+            mail.to.forEach(function(recipient) {
+                builder.addTo(recipient.address || recipient);
+            });
+        }
+
+        if (mail.cc) {
+            mail.cc.forEach(function(recipient) {
+                builder.addCc(recipient.address || recipient);
+            });
+        }
+
+        if (mail.bcc) {
+            mail.bcc.forEach(function(recipient) {
+                builder.addBcc(recipient.address || recipient);
+            });
+        }
 
 
         // 
         // create the mime tree
         // 
 
+        parentNode = builder.createNode([{
+            key: 'Content-Type',
+            value: 'multipart/signed',
+            parameters: {
+                micalg: 'pgp-sha256',
+                protocol: 'application/pgp-signature'
+            }
+        }]);
+
         // this a plain text mail? then only one text/plain node is needed
         if (mail.attachments.length === 0) {
-            builder.createNode([{
+            contentNode = parentNode.createNode([{
+                key: 'Content-Type',
+                value: 'text/plain',
+                parameters: {
+                    charset: 'utf-8'
+                }
+            }, {
+                key: 'Content-Transfer-Encoding',
+                value: 'quoted-printable'
+            }]);
+            contentNode.content = mail.text;
+        } else {
+            // we have attachments, so let's create a multipart/mixed mail
+            contentNode = parentNode.createNode([{
+                key: 'Content-Type',
+                value: 'multipart/mixed',
+            }]);
+
+            // create the text/plain node
+            contentNode.createNode([{
                 key: 'Content-Type',
                 value: 'text/plain',
                 parameters: {
@@ -118,43 +172,37 @@ define(function(require) {
                 value: 'quoted-printable'
             }]).content = mail.text;
 
-            return;
+            // add the attachments
+            mail.attachments.forEach(function(attmt) {
+                contentNode.createNode([{
+                    key: 'Content-Type',
+                    value: attmt.contentType || 'application/octet-stream'
+                }, {
+                    key: 'Content-Transfer-Encoding',
+                    value: 'base64'
+                }, {
+                    key: 'Content-Disposition',
+                    value: 'attachment',
+                    parameters: {
+                        filename: attmt.fileName
+                    }
+                }]).content = String.fromCharCode.apply(null, attmt.uint8Array); // converts a UInt8Array to an 8-bit binary string
+            });
         }
 
-        // we have attachments, so let's create a multipart/mixed mail
-        parentNode = builder.createNode([{
-            key: 'Content-Type',
-            value: 'multipart/mixed',
-        }]);
+        //
+        // Sign the whole thing
+        //
 
-        // create the text/plain node
-        parentNode.createNode([{
+        openpgp.config.prefer_hash_algorithm = openpgp.enums.hash.sha256;
+        signatureNode = parentNode.createNode({
             key: 'Content-Type',
-            value: 'text/plain',
-            parameters: {
-                charset: 'utf-8'
-            }
+            value: 'application/pgp-signature'
         }, {
             key: 'Content-Transfer-Encoding',
-            value: 'quoted-printable'
-        }]).content = mail.text;
-
-        // add the attachments
-        mail.attachments.forEach(function(attmt) {
-            parentNode.createNode([{
-                key: 'Content-Type',
-                value: attmt.contentType || 'application/octet-stream'
-            }, {
-                key: 'Content-Transfer-Encoding',
-                value: 'base64'
-            }, {
-                key: 'Content-Disposition',
-                value: 'attachment',
-                parameters: {
-                    filename: attmt.fileName
-                }
-            }]).content = String.fromCharCode.apply(null, attmt.uint8Array);
+            value: '7bit'
         });
+        signatureNode.content = "-----BEGIN PGP SIGNATURE-----" + openpgp.signClearMessage(this._privateKey, contentNode.build()).split("-----BEGIN PGP SIGNATURE-----").pop();
     };
 
     PgpMailer.prototype._encrypt = function() {
@@ -162,32 +210,19 @@ define(function(require) {
             builder = this._current.builder,
             callback = this._current.callback,
             publicKeys = [],
-            armoredPublicKeys = [],
             plaintext, ciphertext, parentNode;
 
         // prepare the plain text mime nodes
         plaintext = builder.node.build();
 
-        // gather all the ASCII-armored public keys
-        mail.to.concat(mail.cc.concat(mail.bcc.concat(mail.from))).forEach(function(i) {
-            armoredPublicKeys.push(i.publicKey);
-        });
-
         try {
-            // decrypt the private key (for signing)
-            var privateKey = openpgp.key.readArmored(mail.from.privateKey).keys[0];
-            if (!privateKey.decrypt(mail.from.passphrase)) {
-                callback(new Error('Could not decipher the private key!'));
-                return;
-            }
-
             // parse the ASCII-armored public keys
-            armoredPublicKeys.forEach(function(key) {
+            mail.publicKeys.forEach(function(key) {
                 publicKeys.push(openpgp.key.readArmored(key).keys[0]);
             });
 
             // encrypt the plain text
-            ciphertext = openpgp.signAndEncryptMessage(publicKeys, privateKey, plaintext);
+            ciphertext = openpgp.signAndEncryptMessage(publicKeys, this._privateKey, plaintext);
         } catch (err) {
             callback(err);
             return;

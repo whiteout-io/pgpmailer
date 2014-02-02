@@ -68,22 +68,18 @@ Here's what you do in you own app
         secureConnection: true, // because why wouldn't you?
         tls: {
             ca: ['PIN THE CERTIFICATE OF YOUR PROVIDER OF CHOICE'] // because why wouldn't you?
-        }
+        },
+        privateKey: 'ASCII ARMORED PBKDF2 ENCRYPTED PRIVATE KEY',
+        passphrase: 'PASSPHRASE'
+
     });
 
     mailer.send({
-        from: {
-            address: 'SENDER',
-            publicKey: 'ASCII ARMORED PUBLIC KEY',
-            privateKey: 'ASCII ARMORED PBKDF2 ENCRYPTED PRIVATE KEY',
-            passphrase: 'PASSWORD'
-        },
-        to: [{
-            address: 'RECIPIENT',
-            publicKey: 'ASCII ARMORED PUBLIC KEY'
-        }],
-        cc: [],
-        bcc: [],
+        publicKeys: ['ASCII ARMORED PUBLIC KEY OF THE SENDER', 'RECEIVER KEY', 'ANOTHER RECEIVER KEY', 'COPY RECEIVER KEY', 'BLINDCOPY RECEIVER KEY'],
+        from: 'sender@foobar.com',
+        to: ['recipient@foobar.com', 'another_recipient@foobar.com'],
+        cc: ['receive.a.copy@foobar.com'],
+        bcc: ['blindcopy@foobar.com'],
         subject: 'hello, pgp',
         text: 'hello, world!',
         attachments: [{

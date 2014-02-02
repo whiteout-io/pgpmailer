@@ -27,266 +27,383 @@ define(function(require) {
 
 
     describe('unit tests', function() {
-        var mailer, builderMock, mimeNodeMock, smtpMock, ready;
+        describe('constructor', function() {
+            var readArmoredStub, smtpMock, connectStub;
 
-        beforeEach(function() {
-            var opts;
-
-            mimeNodeMock = sinon.createStubInstance(Mailbuilder.Node);
-            builderMock = sinon.createStubInstance(Mailbuilder);
-            builderMock.node = mimeNodeMock;
-            smtpMock = sinon.createStubInstance(SmtpContructorMock);
-            var connectStub = sinon.stub(simplesmtp, 'connect', function() {
-                return smtpMock;
+            beforeEach(function() {
+                smtpMock = sinon.createStubInstance(SmtpContructorMock);
+                connectStub = sinon.stub(simplesmtp, 'connect', function() {
+                    return smtpMock;
+                });
             });
 
-            // workaround to get a hold on the callback function that triggers the next mail to be sent
-            smtpMock.on.withArgs('idle', sinon.match(function(cb) {
-                ready = cb;
-            }));
+            afterEach(function() {
+                simplesmtp.connect.restore();
+                openpgp.key.readArmored.restore();
+            });
 
-            opts = {
-                host: 'hello.world.com',
-                port: 1337,
-                auth: {},
-                secureConnection: true,
-                tls: {
-                    ca: ['trusty cert']
-                }
-            };
+            it('should work', function() {
+                var mailer, opts;
 
-            mailer = new PgpMailer(opts, openpgp, simplesmtp);
+                opts = {
+                    host: 'hello.world.com',
+                    port: 1337,
+                    auth: {},
+                    secureConnection: true,
+                    tls: {
+                        ca: ['trusty cert']
+                    },
+                    privateKey: 'PRIVATE KEY',
+                    passphrase: 'PASSPHRASE',
+                    onError: function(error) {
+                        throw error;
+                    }
+                };
 
-            expect(connectStub.calledOnce).to.be.true;
-            expect(connectStub.calledWith(opts.port, opts.host, opts)).to.be.true;
-            expect(smtpMock.on.calledWith('idle')).to.be.true;
-            expect(smtpMock.on.calledWith('error')).to.be.true;
-        });
+                readArmoredStub = sinon.stub(openpgp.key, 'readArmored');
+                readArmoredStub.returns({
+                    keys: [{
+                        decrypt: function() {
+                            return true;
+                        }
+                    }]
+                });
 
-        afterEach(function() {
-            simplesmtp.connect.restore();
-        });
+                mailer = new PgpMailer(opts, openpgp, simplesmtp);
 
-        describe('initial setup', function() {
-            it('should be correct', function() {
+                expect(connectStub.calledOnce).to.be.true;
+                expect(connectStub.calledWith(opts.port, opts.host, opts)).to.be.true;
+                expect(readArmoredStub.calledWith(opts.privateKey)).to.be.true;
+                expect(smtpMock.on.calledWith('idle')).to.be.true;
+                expect(smtpMock.on.calledWith('error')).to.be.true;
+
                 expect(mailer).to.exist;
                 expect(mailer._pgp).to.exist;
                 expect(mailer._smtp).to.exist;
                 expect(mailer._queue).to.deep.equal([]);
                 expect(mailer._busy).to.be.true;
                 expect(mailer._current).to.be.undefined;
+
             });
-        });
 
-        describe('smtp idle state', function() {
-            it('should trigger the client', function() {
-                ready(); // smtp enters idle mode and is ready to send stuff
+            it('should throw during readArmored', function(done) {
+                var mailer, opts;
 
-                expect(mailer._busy).to.be.false; // now we should be ready to send
-            });
-        });
+                readArmoredStub = sinon.stub(openpgp.key, 'readArmored');
+                readArmoredStub.throws('FOOBAR!');
 
-        describe('send', function() {
-            it('should send a message with attachments when ready', function() {
-                var cb, mail, mockCiphertext, mockPlaintext, mockEnvelope,
-                    mockPrivateKey, mockCompiledMail,
-                    readArmoredStub, signAndEncryptStub;
-
-                //
-                // Setup Fixture
-                //
-
-                mail = {
-                    from: {
-                        address: 'a@a.io',
-                        privateKey: 'privateA',
-                        publicKey: 'publicA',
-                        passphrase: 'yadddayadda'
+                opts = {
+                    host: 'hello.world.com',
+                    port: 1337,
+                    auth: {},
+                    secureConnection: true,
+                    tls: {
+                        ca: ['trusty cert']
                     },
-                    to: [{
-                        address: 'b@b.io',
-                        publicKey: 'publicB'
-                    }, {
-                        address: 'c@c.io',
-                        publicKey: 'publicC'
-                    }],
-                    cc: [{
-                        address: 'd@d.io',
-                        publicKey: 'publicD'
-                    }],
-                    bcc: [{
-                        address: 'e@e.io',
-                        publicKey: 'publicE'
-                    }],
-                    subject: 'foobar',
-                    text: 'hello, world!',
-                    attachments: [{
-                        contentType: 'text/plain',
-                        fileName: 'a.txt',
-                        uint8Array: utf16ToUInt8Array('attachment1')
-                    }]
+                    privateKey: 'PRIVATE KEY',
+                    passphrase: 'PASSPHRASE',
+                    onError: function(error) {
+                        expect(error).to.exist;
+                        expect(connectStub.called).to.be.false;
+                        expect(readArmoredStub.calledWith(opts.privateKey)).to.be.true;
+                        expect(smtpMock.on.called).to.be.false;
+
+                        done();
+                    }
                 };
-                mockCompiledMail = 'THIS! IS! PGP!';
-                mockCiphertext = 'MORE PGP THAN YOU CAN HANDLE!';
-                mockPlaintext = 'BLABLABLABLAYADDAYADDA';
-                mockEnvelope = {};
-                mockPrivateKey = {
+
+                mailer = new PgpMailer(opts, openpgp, simplesmtp);
+            });
+
+            it('should fail during decrypt', function(done) {
+                var mailer, opts;
+
+                readArmoredStub = sinon.stub(openpgp.key, 'readArmored');
+                readArmoredStub.returns({
                     keys: [{
                         decrypt: function() {
-                            return true;
+                            return false;
                         }
                     }]
+                });
+
+                opts = {
+                    host: 'hello.world.com',
+                    port: 1337,
+                    auth: {},
+                    secureConnection: true,
+                    tls: {
+                        ca: ['trusty cert']
+                    },
+                    privateKey: 'PRIVATE KEY',
+                    passphrase: 'PASSPHRASE',
+                    onError: function(error) {
+                        expect(error).to.exist;
+                        expect(connectStub.called).to.be.false;
+                        expect(readArmoredStub.calledWith(opts.privateKey)).to.be.true;
+                        expect(smtpMock.on.called).to.be.false;
+
+                        done();
+                    }
                 };
-                readArmoredStub = sinon.stub(openpgp.key, 'readArmored', function(arg) {
-                    return (arg === mail.from.privateKey) ? mockPrivateKey : {
-                        keys: [{}]
-                    };
+
+                mailer = new PgpMailer(opts, openpgp, simplesmtp);
+            });
+        });
+
+        describe('object', function() {
+            var mailer, smtpMock, ready, builderMock,
+                rootNodeMock, contentNodeMock, signatureNodeMock,
+                encryptedRootMock;
+
+            beforeEach(function() {
+                var opts, readArmoredStub;
+
+                rootNodeMock = sinon.createStubInstance(Mailbuilder.Node);
+                contentNodeMock = sinon.createStubInstance(Mailbuilder.Node);
+                signatureNodeMock = sinon.createStubInstance(Mailbuilder.Node);
+                encryptedRootMock = sinon.createStubInstance(Mailbuilder.Node);
+                builderMock = sinon.createStubInstance(Mailbuilder);
+                builderMock.node = rootNodeMock;
+
+                smtpMock = sinon.createStubInstance(SmtpContructorMock);
+                var connectStub = sinon.stub(simplesmtp, 'connect', function() {
+                    return smtpMock;
                 });
-                signAndEncryptStub = sinon.stub(openpgp, 'signAndEncryptMessage', function() {
-                    return mockCiphertext;
-                });
 
-                builderMock.createNode.returns(mimeNodeMock);
-                builderMock.build.returns(mockCompiledMail);
-                mimeNodeMock.createNode.returns({});
-                mimeNodeMock.build.returns(mockPlaintext);
+                // workaround to get a hold on the callback function that triggers the next mail to be sent
+                smtpMock.on.withArgs('idle', sinon.match(function(cb) {
+                    ready = cb;
+                }));
 
-                builderMock.getEnvelope.returns(mockEnvelope);
-                smtpMock.on.withArgs('message').yields();
+                opts = {
+                    host: 'hello.world.com',
+                    port: 1337,
+                    auth: {},
+                    secureConnection: true,
+                    tls: {
+                        ca: ['trusty cert']
+                    },
+                    privateKey: 'PRIVATE KEY',
+                    passphrase: 'PASSPHRASE'
 
+                };
 
-                //
-                // Prepare SUT
-                //
+                readArmoredStub = sinon.stub(openpgp.key, 'readArmored');
+                readArmoredStub.returns({ keys: [{ decrypt: function() { return true; } }] });
 
-                // queue the mail
-                mailer.send(mail, cb, builderMock);
+                mailer = new PgpMailer(opts, openpgp, simplesmtp);
 
-                // check that the message is queued
-                expect(mailer._queue.length).to.equal(1);
+                expect(connectStub.calledOnce).to.be.true;
+                expect(connectStub.calledWith(opts.port, opts.host, opts)).to.be.true;
+                expect(smtpMock.on.calledWith('idle')).to.be.true;
+                expect(smtpMock.on.calledWith('error')).to.be.true;
 
-
-                //
-                // Execute Test
-                //
-
-                ready(); // and ... weeeeeeee
-
-
-                //
-                // Verification
-                //
-
-                // check the envelope setting
-                expect(builderMock.setSubject.calledOnce).to.be.true;
-                expect(builderMock.setFrom.calledOnce).to.be.true;
-                expect(builderMock.addTo.calledTwice).to.be.true;
-                expect(builderMock.addCc.calledOnce).to.be.true;
-                expect(builderMock.addBcc.calledOnce).to.be.true;
-                expect(builderMock.setSubject.calledWith(mail.subject)).to.be.true;
-                expect(builderMock.setFrom.calledWith(mail.from.address)).to.be.true;
-                expect(builderMock.addTo.calledWith(mail.to[0].address)).to.be.true;
-                expect(builderMock.addTo.calledWith(mail.to[1].address)).to.be.true;
-                expect(builderMock.addCc.calledWith(mail.cc[0].address)).to.be.true;
-                expect(builderMock.addBcc.calledWith(mail.bcc[0].address)).to.be.true;
-
-                // check that the smtp client was called with the right stuff
-                expect(smtpMock.useEnvelope.calledOnce).to.be.true;
-                expect(smtpMock.end.calledOnce).to.be.true;
-                expect(smtpMock.useEnvelope.calledWith(mockEnvelope)).to.be.true;
-                expect(smtpMock.end.calledWith(mockCompiledMail)).to.be.true;
-
-                // check the registered event handlers on the smtp client
-                expect(smtpMock.on.calledWith('message')).to.be.true;
-                expect(smtpMock.on.calledWith('rcptFailed')).to.be.true;
-                expect(smtpMock.on.calledWith('ready')).to.be.true;
-
-                // check that the mailbuilder has built a clear text and a pgp mail
-                expect(builderMock.createNode.calledTwice).to.be.true;
-                expect(builderMock.createNode.calledWith([{
-                    key: 'Content-Type',
-                    value: 'multipart/mixed',
-                }])).to.be.true;
-                expect(builderMock.createNode.calledWith([{
-                    key: 'Content-Type',
-                    value: 'multipart/encrypted',
-                    parameters: {
-                        protocol: 'application/pgp-encrypted'
-                    }
-                }, {
-                    key: 'Content-Transfer-Encoding',
-                    value: '7bit'
-                }, {
-                    key: 'Content-Description',
-                    value: 'OpenPGP encrypted message'
-                }])).to.be.true;
-
-                // check that the mailbuilder has compiled the pgp mail
-                expect(builderMock.build.calledOnce).to.be.true;
-
-                // check that the top level mime node has built:
-                // - text/plain node,
-                // - the text/plain attachment,
-                // - the application/pgp-encrypted node,
-                // - the inline attachment
-                expect(mimeNodeMock.createNode.callCount).to.equal(4);
-                expect(mimeNodeMock.createNode.calledWith([{
-                    key: 'Content-Type',
-                    value: 'text/plain',
-                    parameters: {
-                        charset: 'utf-8'
-                    }
-                }, {
-                    key: 'Content-Transfer-Encoding',
-                    value: 'quoted-printable'
-                }])).to.be.true;
-                expect(mimeNodeMock.createNode.calledWith([{
-                    key: 'Content-Type',
-                    value: mail.attachments[0].contentType
-                }, {
-                    key: 'Content-Transfer-Encoding',
-                    value: 'base64'
-                }, {
-                    key: 'Content-Disposition',
-                    value: 'attachment',
-                    parameters: {
-                        filename: mail.attachments[0].fileName
-                    }
-                }])).to.be.true;
-                expect(mimeNodeMock.createNode.calledWith([{
-                    key: 'Content-Type',
-                    value: 'application/pgp-encrypted'
-                }, {
-                    key: 'Content-Transfer-Encoding',
-                    value: '7bit'
-                }, {
-                    key: 'Content-Description',
-                    value: 'PGP/MIME Versions Identification'
-                }])).to.be.true;
-                expect(mimeNodeMock.createNode.calledWith([{
-                    key: 'Content-Type',
-                    value: 'application/octet-stream'
-                }, {
-                    key: 'Content-Transfer-Encoding',
-                    value: '7bit'
-                }, {
-                    key: 'Content-Description',
-                    value: 'OpenPGP encrypted message'
-                }, {
-                    key: 'Content-Disposition',
-                    value: 'inline',
-                    parameters: {
-                        filename: 'encrypted.asc'
-                    }
-                }])).to.be.true;
-
-                // check that the pgp lib was called
-                expect(readArmoredStub.callCount).to.equal(6);
-                expect(signAndEncryptStub.calledOnce).to.be.true;
-
-                // restore stubs
                 openpgp.key.readArmored.restore();
-                openpgp.signAndEncryptMessage.restore();
+            });
+
+            afterEach(function() {
+                simplesmtp.connect.restore();
+            });
+
+            describe('smtp idle state', function() {
+                it('should trigger the client', function() {
+                    ready(); // smtp enters idle mode and is ready to send stuff
+
+                    expect(mailer._busy).to.be.false; // now we should be ready to send
+                });
+            });
+
+            describe('send', function() {
+                it('should send a message with attachments when ready', function() {
+                    var cb, mail, mockCiphertext, mockPlaintext, mockCompiledMail, mockSignature,
+                        readArmoredStub, signAndEncryptStub, signClearStub;
+
+                    //
+                    // Setup Fixture
+                    //
+                    
+                    cb = function(err) {
+                        expect(err).to.not.exist;
+                    };
+
+                    mail = {
+                        publicKeys: ['publicA', 'publicB', 'publicC', 'publicD', 'publicE'],
+                        from: { address: 'a@a.io' },
+                        to: [{ address: 'b@b.io' }, { address: 'c@c.io' }],
+                        cc: [{ address: 'd@d.io' }],
+                        bcc: [{ address: 'e@e.io' }],
+                        subject: 'foobar',
+                        text: 'hello, world!',
+                        attachments: [{
+                            contentType: 'text/plain',
+                            fileName: 'a.txt',
+                            uint8Array: utf16ToUInt8Array('attachment1')
+                        }]
+                    };
+
+                    mockCompiledMail = 'THIS! IS! PGP!';
+                    mockCiphertext = 'MORE PGP THAN YOU CAN HANDLE!';
+                    mockPlaintext = 'BLABLABLABLAYADDAYADDA';
+                    mockSignature = '-----BEGIN PGP SIGNATURE-----UMBAPALLUMBA-----END PGP SIGNATURE-----';
+
+                    readArmoredStub = sinon.stub(openpgp.key, 'readArmored');
+                    readArmoredStub.returns({ keys: [{}] });
+                    signAndEncryptStub = sinon.stub(openpgp, 'signAndEncryptMessage');
+                    signAndEncryptStub.returns(mockCiphertext);
+                    signClearStub = sinon.stub(openpgp, 'signClearMessage');
+                    signClearStub.returns(mockSignature);
+
+                    builderMock.build.returns(mockCompiledMail);
+                    builderMock.getEnvelope.returns({});
+                    builderMock.createNode.withArgs([{
+                        key: 'Content-Type',
+                        value: 'multipart/signed',
+                        parameters: {
+                            micalg: 'pgp-sha256',
+                            protocol: 'application/pgp-signature'
+                        }
+                    }]).returns(rootNodeMock);
+                    builderMock.createNode.withArgs([{
+                        key: 'Content-Type',
+                        value: 'multipart/encrypted',
+                        parameters: {
+                            protocol: 'application/pgp-encrypted'
+                        }
+                    }, {
+                        key: 'Content-Transfer-Encoding',
+                        value: '7bit'
+                    }, {
+                        key: 'Content-Description',
+                        value: 'OpenPGP encrypted message'
+                    }]).returns(encryptedRootMock);
+                    
+                    rootNodeMock.createNode.withArgs([{
+                        key: 'Content-Type',
+                        value: 'multipart/mixed',
+                    }]).returns(contentNodeMock);
+                    rootNodeMock.createNode.withArgs({
+                        key: 'Content-Type',
+                        value: 'application/pgp-signature'
+                    }, {
+                        key: 'Content-Transfer-Encoding',
+                        value: '7bit'
+                    }).returns(signatureNodeMock);
+                    contentNodeMock.createNode.withArgs([{
+                        key: 'Content-Type',
+                        value: 'text/plain',
+                        parameters: {
+                            charset: 'utf-8'
+                        }
+                    }, {
+                        key: 'Content-Transfer-Encoding',
+                        value: 'quoted-printable'
+                    }]).returns({});
+                    contentNodeMock.createNode.withArgs([{
+                        key: 'Content-Type',
+                        value: mail.attachments[0].contentType
+                    }, {
+                        key: 'Content-Transfer-Encoding',
+                        value: 'base64'
+                    }, {
+                        key: 'Content-Disposition',
+                        value: 'attachment',
+                        parameters: {
+                            filename: mail.attachments[0].fileName
+                        }
+                    }]).returns({});
+                    encryptedRootMock.createNode.withArgs([{
+                        key: 'Content-Type',
+                        value: 'application/pgp-encrypted'
+                    }, {
+                        key: 'Content-Transfer-Encoding',
+                        value: '7bit'
+                    }, {
+                        key: 'Content-Description',
+                        value: 'PGP/MIME Versions Identification'
+                    }]).returns({});
+                    encryptedRootMock.createNode.withArgs([{
+                        key: 'Content-Type',
+                        value: 'application/octet-stream'
+                    }, {
+                        key: 'Content-Transfer-Encoding',
+                        value: '7bit'
+                    }, {
+                        key: 'Content-Description',
+                        value: 'OpenPGP encrypted message'
+                    }, {
+                        key: 'Content-Disposition',
+                        value: 'inline',
+                        parameters: {
+                            filename: 'encrypted.asc'
+                        }
+                    }]).returns({});
+
+                    smtpMock.on.withArgs('message').yields();
+
+                    //
+                    // Prepare SUT
+                    //
+
+                    // queue the mail
+                    mailer.send(mail, cb, builderMock);
+
+                    // check that the message is queued
+                    expect(mailer._queue.length).to.equal(1);
+
+
+                    //
+                    // Execute Test
+                    //
+
+                    ready(); // and ... weeeeeeee
+
+
+                    //
+                    // Verification
+                    //
+
+                    // check the envelope setting
+                    expect(builderMock.setSubject.calledOnce).to.be.true;
+                    expect(builderMock.setFrom.calledOnce).to.be.true;
+                    expect(builderMock.addTo.calledTwice).to.be.true;
+                    expect(builderMock.addCc.calledOnce).to.be.true;
+                    expect(builderMock.addBcc.calledOnce).to.be.true;
+                    expect(builderMock.setSubject.calledWith(mail.subject)).to.be.true;
+                    expect(builderMock.setFrom.calledWith(mail.from.address)).to.be.true;
+                    expect(builderMock.addTo.calledWith(mail.to[0].address)).to.be.true;
+                    expect(builderMock.addTo.calledWith(mail.to[1].address)).to.be.true;
+                    expect(builderMock.addCc.calledWith(mail.cc[0].address)).to.be.true;
+                    expect(builderMock.addBcc.calledWith(mail.bcc[0].address)).to.be.true;
+
+                    // check that the smtp client was called with the right stuff
+                    expect(smtpMock.useEnvelope.calledOnce).to.be.true;
+                    expect(smtpMock.end.calledOnce).to.be.true;
+                    expect(smtpMock.useEnvelope.calledWith({})).to.be.true;
+                    expect(smtpMock.end.calledWith(mockCompiledMail)).to.be.true;
+
+                    // check the registered event handlers on the smtp client
+                    expect(smtpMock.on.calledWith('message')).to.be.true;
+                    expect(smtpMock.on.calledWith('rcptFailed')).to.be.true;
+                    expect(smtpMock.on.calledWith('ready')).to.be.true;
+
+                    // check that the mailbuilder has built a clear text and a pgp mail and compiled the pgp mail
+                    expect(builderMock.createNode.calledTwice).to.be.true;
+                    expect(builderMock.build.calledOnce).to.be.true;
+
+                    // check that the top level mime node has built:
+                    expect(rootNodeMock.createNode.callCount).to.equal(2);
+                    expect(contentNodeMock.createNode.callCount).to.equal(2);
+                    expect(encryptedRootMock.createNode.callCount).to.equal(2);
+
+                    // check that the pgp lib was called
+                    expect(readArmoredStub.callCount).to.equal(5);
+                    expect(signAndEncryptStub.calledOnce).to.be.true;
+
+                    // restore stubs
+                    openpgp.key.readArmored.restore();
+                    openpgp.signAndEncryptMessage.restore();
+                });
             });
         });
     });
@@ -294,6 +411,7 @@ define(function(require) {
     //
     // Helper Functions
     //
+
     function utf16ToUInt8Array(str) {
         var bufView = new Uint16Array(new ArrayBuffer(str.length * 2));
         for (var i = 0, strLen = str.length; i < strLen; i++) {
