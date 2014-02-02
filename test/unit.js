@@ -25,7 +25,6 @@ define(function(require) {
     SmtpContructorMock.prototype.end = function() {};
     SmtpContructorMock.prototype.quite = function() {};
 
-
     describe('unit tests', function() {
         describe('constructor', function() {
             var readArmoredStub, smtpMock, connectStub;
@@ -39,7 +38,6 @@ define(function(require) {
 
             afterEach(function() {
                 simplesmtp.connect.restore();
-                openpgp.key.readArmored.restore();
             });
 
             it('should work', function() {
@@ -84,6 +82,7 @@ define(function(require) {
                 expect(mailer._busy).to.be.true;
                 expect(mailer._current).to.be.undefined;
 
+                openpgp.key.readArmored.restore();
             });
 
             it('should throw during readArmored', function(done) {
@@ -107,7 +106,7 @@ define(function(require) {
                         expect(connectStub.called).to.be.false;
                         expect(readArmoredStub.calledWith(opts.privateKey)).to.be.true;
                         expect(smtpMock.on.called).to.be.false;
-
+                        openpgp.key.readArmored.restore();
                         done();
                     }
                 };
@@ -142,6 +141,7 @@ define(function(require) {
                         expect(connectStub.called).to.be.false;
                         expect(readArmoredStub.calledWith(opts.privateKey)).to.be.true;
                         expect(smtpMock.on.called).to.be.false;
+                        openpgp.key.readArmored.restore();
 
                         done();
                     }

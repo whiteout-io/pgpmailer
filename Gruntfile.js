@@ -23,8 +23,12 @@ module.exports = function(grunt) {
                 },
                 src: ['test/example.js']
             }
-        }
+        },
 
+        // phantomjs is unusable due to a bug: 
+        // '[object Uint16Array]' is not a valid argument for 'Function.prototype.apply'
+        // see https://github.com/ariya/phantomjs/issues/11172
+        // 
         // connect: {
         //     test: {
         //         options: {
@@ -40,7 +44,6 @@ module.exports = function(grunt) {
         //         }
         //     }
         // },
-
 
         // mocha_phantomjs: {
         //     all: {
@@ -59,8 +62,7 @@ module.exports = function(grunt) {
     // grunt.loadNpmTasks('grunt-contrib-connect');
 
     // Tasks
-    // grunt.registerTask('dev', ['connect:dev']);
-    // grunt.registerTask('default', ['jshint', 'connect:test', 'mochaTest', 'mocha_phantomjs']);
-    grunt.registerTask('default', ['jshint', 'mochaTest:all']);
+    grunt.registerTask('dev', ['connect:dev']);
+    grunt.registerTask('default', ['jshint', 'mochaTest:all'/*, 'connect:test', 'mocha_phantomjs:all'*/]);
     grunt.registerTask('example', ['jshint', 'mochaTest:example']);
 };
