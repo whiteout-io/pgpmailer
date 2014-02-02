@@ -69,12 +69,14 @@ define(function(require) {
      * @param {String} mail.subject String containing with the mail's subject
      * @param {String} mail.text Plain text to be sent with the mail
      * @param {Array} mail.attachments Array of attachment objects with fileName {String}, uint8Array {Uint8Array}, and contentType {String}
+     * @param {Array} armoredPublicKeys The public keys with which the message should be encrypted
      * @param {Function} callback(error) Indicates that the mail has been sent, or gives information in case an error occurred.
      */
-    PgpMailer.prototype.send = function(mail, callback, builder) {
+    PgpMailer.prototype.send = function(mail, armoredPublicKeys, callback, builder) {
         this._queue.push({
             builder: builder || new Mailbuilder(),
             mail: mail,
+            armoredPublicKeys: armoredPublicKeys,
             callback: callback
         });
 
@@ -206,9 +208,9 @@ define(function(require) {
     };
 
     PgpMailer.prototype._encrypt = function() {
-        var mail = this._current.mail,
-            builder = this._current.builder,
+        var builder = this._current.builder,
             callback = this._current.callback,
+            armoredPublicKeys = this._current.armoredPublicKeys,
             publicKeys = [],
             plaintext, ciphertext, parentNode;
 
@@ -217,7 +219,7 @@ define(function(require) {
 
         try {
             // parse the ASCII-armored public keys
-            mail.publicKeys.forEach(function(key) {
+            armoredPublicKeys.forEach(function(key) {
                 publicKeys.push(openpgp.key.readArmored(key).keys[0]);
             });
 

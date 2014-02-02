@@ -36,8 +36,8 @@ define(function(require) {
 
             });
 
+            var armoredPublicKeys = ['ASCII ARMORED PUBLIC KEY OF THE SENDER', 'FIRST RECEIVER KEY', 'ANOTHER RECEIVER KEY', 'COPY RECEIVER KEY', 'BLINDCOPY RECEIVER KEY'];
             var mail = {
-                publicKeys: ['ASCII ARMORED PUBLIC KEY OF THE SENDER', 'FIRST RECEIVER KEY', 'ANOTHER RECEIVER KEY', 'COPY RECEIVER KEY', 'BLINDCOPY RECEIVER KEY'],
                 from: 'sender@foobar.com',
                 to: ['recipient@foobar.com', 'another_recipient@foobar.com'],
                 cc: ['receive.a.copy@foobar.com'],
@@ -51,7 +51,7 @@ define(function(require) {
                 }]
             };
 
-            mailer.send(mail, function(err) {
+            mailer.send(mail, armoredPublicKeys, function(err) {
                 expect(err).to.not.exist;
                 done();
             });

@@ -217,7 +217,7 @@ define(function(require) {
             describe('send', function() {
                 it('should send a message with attachments when ready', function() {
                     var cb, mail, mockCiphertext, mockPlaintext, mockCompiledMail, mockSignature,
-                        readArmoredStub, signAndEncryptStub, signClearStub;
+                        readArmoredStub, signAndEncryptStub, signClearStub, armoredPublicKeys;
 
                     //
                     // Setup Fixture
@@ -227,8 +227,8 @@ define(function(require) {
                         expect(err).to.not.exist;
                     };
 
+                    armoredPublicKeys = ['publicA', 'publicB', 'publicC', 'publicD', 'publicE'];
                     mail = {
-                        publicKeys: ['publicA', 'publicB', 'publicC', 'publicD', 'publicE'],
                         from: { address: 'a@a.io' },
                         to: [{ address: 'b@b.io' }, { address: 'c@c.io' }],
                         cc: [{ address: 'd@d.io' }],
@@ -346,7 +346,7 @@ define(function(require) {
                     //
 
                     // queue the mail
-                    mailer.send(mail, cb, builderMock);
+                    mailer.send(mail, armoredPublicKeys, cb, builderMock);
 
                     // check that the message is queued
                     expect(mailer._queue.length).to.equal(1);
@@ -397,7 +397,10 @@ define(function(require) {
                     expect(encryptedRootMock.createNode.callCount).to.equal(2);
 
                     // check that the pgp lib was called
-                    expect(readArmoredStub.callCount).to.equal(5);
+                    expect(readArmoredStub.callCount).to.equal(armoredPublicKeys.length);
+                    armoredPublicKeys.forEach(function(armored) {
+                        expect(readArmoredStub.calledWith(armored)).to.be.true;
+                    });
                     expect(signAndEncryptStub.calledOnce).to.be.true;
 
                     // restore stubs
