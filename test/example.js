@@ -29,7 +29,11 @@ define(function(require) {
                     ca: ['TRUSTY CA']
                 },
                 privateKey: 'ASCII ARMORED PBKDF2 ENCRYPTED PRIVATE KEY',
-                passphrase: 'PASSPHRASE'
+                passphrase: 'PASSPHRASE',
+                onError: function(error) {
+                    console.error(error);
+                }
+
             });
 
             var mail = {
