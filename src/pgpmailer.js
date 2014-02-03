@@ -220,7 +220,7 @@ define(function(require) {
             value: '7bit'
         }]);
 
-        cleartext = contentNode.build();
+        cleartext = contentNode.build().trim()+'\r\n';
         openpgp.config.prefer_hash_algorithm = openpgp.enums.hash.sha256;
         signedCleartext = openpgp.signClearMessage([this._privateKey], cleartext);
         signatureHeader = "-----BEGIN PGP SIGNATURE-----";
@@ -244,7 +244,7 @@ define(function(require) {
             });
 
             // encrypt the plain text
-            ciphertext = openpgp.signAndEncryptMessage(publicKeys, this._privateKey, plaintext);
+            ciphertext = openpgp.encryptMessage(publicKeys, plaintext);
         } catch (err) {
             callback(err);
             return;

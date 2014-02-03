@@ -178,16 +178,17 @@ define(function(require) {
 
                 mockCompiledMail = 'THIS! IS! PGP!';
                 mockCiphertext = 'MORE PGP THAN YOU CAN HANDLE!';
-                mockPlaintext = 'BLABLABLABLAYADDAYADDA';
+                mockPlaintext = 'BLABLABLABLAYADDAYADDA\r\n\r\n';
                 mockSignature = '-----BEGIN PGP SIGNATURE-----UMBAPALLUMBA-----END PGP SIGNATURE-----';
 
                 readArmoredStub = sinon.stub(openpgp.key, 'readArmored');
                 readArmoredStub.returns({ keys: [{}] });
-                signAndEncryptStub = sinon.stub(openpgp, 'signAndEncryptMessage');
+                signAndEncryptStub = sinon.stub(openpgp, 'encryptMessage');
                 signAndEncryptStub.returns(mockCiphertext);
                 signClearStub = sinon.stub(openpgp, 'signClearMessage');
-                signClearStub.withArgs([mailer._privateKey]).returns(mockSignature);
+                signClearStub.withArgs([mailer._privateKey], mockPlaintext.trim()+'\r\n').returns(mockSignature);
 
+                contentNodeMock.build.returns(mockPlaintext);
                 builderMock.build.returns(mockCompiledMail);
                 builderMock.getEnvelope.returns({});
                 builderMock.createNode.withArgs([{
@@ -340,7 +341,7 @@ define(function(require) {
 
                 // restore stubs
                 openpgp.key.readArmored.restore();
-                openpgp.signAndEncryptMessage.restore();
+                openpgp.encryptMessage.restore();
             });
 
             it('should not send without a private key', function(done) {
