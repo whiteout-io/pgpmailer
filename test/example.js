@@ -35,7 +35,7 @@ define(function(require) {
             });
 
             mailer.setPrivateKey({
-                privateKey: 'ASCII ARMORED PBKDF2 ENCRYPTED PRIVATE KEY',
+                privateKey: 'ASCII ARMORED PRIVATE KEY',
                 passphrase: 'PASSPHRASE'
             }, function(error) {
                 expect(error).to.not.exist;
