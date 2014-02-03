@@ -57,10 +57,7 @@ define(function(require) {
                 secureConnection: true,
                 tls: {
                     ca: ['trusty cert']
-                },
-                privateKey: 'PRIVATE KEY',
-                passphrase: 'PASSPHRASE'
-
+                }
             };
 
             mailer = new PgpMailer(opts, openpgp, simplesmtp);
@@ -90,41 +87,53 @@ define(function(require) {
 
             it('should set the private key', function(done) {
                 var opts = {
-                    privateKey: 'PRIVATE KEY',
+                    privateKeyArmored: 'PRIVATE KEY',
                     passphrase: 'PASSPHRASE'
                 };
 
-                readArmoredStub.returns({ keys: [{ decrypt: function() { return true; } }] });
+                readArmoredStub.returns({
+                    keys: [{
+                        decrypt: function() {
+                            return true;
+                        }
+                    }]
+                });
 
                 mailer.setPrivateKey(opts, function(err) {
                     expect(err).to.not.exist;
-                    expect(readArmoredStub.calledWith(opts.privateKey)).to.be.true;
+                    expect(readArmoredStub.calledWith(opts.privateKeyArmored)).to.be.true;
                     expect(mailer._privateKey).to.exist;
 
                     done();
                 });
             });
-            
+
             it('should not set the private key due to wrong password', function(done) {
                 var opts = {
-                    privateKey: 'PRIVATE KEY',
+                    privateKeyArmored: 'PRIVATE KEY',
                     passphrase: 'PASSPHRASE'
                 };
 
-                readArmoredStub.returns({ keys: [{ decrypt: function() { return false; } }] });
+                readArmoredStub.returns({
+                    keys: [{
+                        decrypt: function() {
+                            return false;
+                        }
+                    }]
+                });
 
                 mailer.setPrivateKey(opts, function(err) {
                     expect(err).to.exist;
-                    expect(readArmoredStub.calledWith(opts.privateKey)).to.be.true;
+                    expect(readArmoredStub.calledWith(opts.privateKeyArmored)).to.be.true;
                     expect(mailer._privateKey).to.not.exist;
 
                     done();
                 });
             });
-            
+
             it('should not set the private key and throw an exception', function(done) {
                 var opts = {
-                    privateKey: 'PRIVATE KEY',
+                    privateKeyArmored: 'PRIVATE KEY',
                     passphrase: 'PASSPHRASE'
                 };
 
@@ -132,7 +141,7 @@ define(function(require) {
 
                 mailer.setPrivateKey(opts, function(err) {
                     expect(err).to.exist;
-                    expect(readArmoredStub.calledWith(opts.privateKey)).to.be.true;
+                    expect(readArmoredStub.calledWith(opts.privateKeyArmored)).to.be.true;
                     expect(mailer._privateKey).to.not.exist;
 
                     done();
@@ -156,17 +165,27 @@ define(function(require) {
                 //
                 // Setup Fixture
                 //
-                
+
                 cb = function(err) {
                     expect(err).to.not.exist;
                 };
 
                 armoredPublicKeys = ['publicA', 'publicB', 'publicC', 'publicD', 'publicE'];
                 mail = {
-                    from: { address: 'a@a.io' },
-                    to: [{ address: 'b@b.io' }, { address: 'c@c.io' }],
-                    cc: [{ address: 'd@d.io' }],
-                    bcc: [{ address: 'e@e.io' }],
+                    from: {
+                        address: 'a@a.io'
+                    },
+                    to: [{
+                        address: 'b@b.io'
+                    }, {
+                        address: 'c@c.io'
+                    }],
+                    cc: [{
+                        address: 'd@d.io'
+                    }],
+                    bcc: [{
+                        address: 'e@e.io'
+                    }],
                     subject: 'foobar',
                     text: 'hello, world!',
                     attachments: [{
@@ -182,11 +201,13 @@ define(function(require) {
                 mockSignature = '-----BEGIN PGP SIGNATURE-----UMBAPALLUMBA-----END PGP SIGNATURE-----';
 
                 readArmoredStub = sinon.stub(openpgp.key, 'readArmored');
-                readArmoredStub.returns({ keys: [{}] });
-                signAndEncryptStub = sinon.stub(openpgp, 'encryptMessage');
+                readArmoredStub.returns({
+                    keys: [{}]
+                });
+                signAndEncryptStub = sinon.stub(openpgp, 'signAndEncryptMessage');
                 signAndEncryptStub.returns(mockCiphertext);
                 signClearStub = sinon.stub(openpgp, 'signClearMessage');
-                signClearStub.withArgs([mailer._privateKey], mockPlaintext.trim()+'\r\n').returns(mockSignature);
+                signClearStub.withArgs([mailer._privateKey], mockPlaintext.trim() + '\r\n').returns(mockSignature);
 
                 contentNodeMock.build.returns(mockPlaintext);
                 builderMock.build.returns(mockCompiledMail);
@@ -212,7 +233,7 @@ define(function(require) {
                     key: 'Content-Description',
                     value: 'OpenPGP encrypted message'
                 }]).returns(encryptedRootMock);
-                
+
                 rootNodeMock.createNode.withArgs([{
                     key: 'Content-Type',
                     value: 'multipart/mixed',
@@ -341,7 +362,8 @@ define(function(require) {
 
                 // restore stubs
                 openpgp.key.readArmored.restore();
-                openpgp.encryptMessage.restore();
+                openpgp.signAndEncryptMessage.restore();
+                openpgp.signClearMessage.restore();
             });
 
             it('should not send without a private key', function(done) {

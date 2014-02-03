@@ -68,11 +68,18 @@ Here's what you do in you own app
         secureConnection: true, // because why wouldn't you?
         tls: {
             ca: ['PIN THE CERTIFICATE OF YOUR PROVIDER OF CHOICE'] // because why wouldn't you?
-        },
-        privateKey: 'ASCII ARMORED PRIVATE KEY',
-        passphrase: 'PASSPHRASE'
+        }
     });
 
+    // set your private key to sign your message
+    pgpmailer.setPrivateKey({
+        privateKeyArmored: 'ASCII ARMORED PRIVATE KEY',
+        passphrase: 'PASSPHRASE'
+    }, function(error) {
+        // do something useful with the error
+    });
+
+    // execute this after pgpmailer.setPrivateKey invoked its callback and the private key is set
     var armoredPublicKeys = ['ASCII ARMORED PUBLIC KEY OF THE SENDER', 'RECEIVER KEY', 'ANOTHER RECEIVER KEY', 'COPY RECEIVER KEY', 'BLINDCOPY RECEIVER KEY'];
     var mail = {
         from: 'sender@foobar.com',

@@ -55,7 +55,7 @@ define(function(require) {
 
         try {
             // decrypt the private key (for signing)
-            privateKey = openpgp.key.readArmored(options.privateKey).keys[0];
+            privateKey = openpgp.key.readArmored(options.privateKeyArmored).keys[0];
             if (!privateKey.decrypt(options.passphrase)) {
                 callback(new Error('Wrong passphrase! Could not decrypt the private key!'));
                 return;
@@ -220,7 +220,7 @@ define(function(require) {
             value: '7bit'
         }]);
 
-        cleartext = contentNode.build().trim()+'\r\n';
+        cleartext = contentNode.build().trim() + '\r\n';
         openpgp.config.prefer_hash_algorithm = openpgp.enums.hash.sha256;
         signedCleartext = openpgp.signClearMessage([this._privateKey], cleartext);
         signatureHeader = "-----BEGIN PGP SIGNATURE-----";
@@ -244,7 +244,7 @@ define(function(require) {
             });
 
             // encrypt the plain text
-            ciphertext = openpgp.encryptMessage(publicKeys, plaintext);
+            ciphertext = openpgp.signAndEncryptMessage(publicKeys, this._privateKey, plaintext);
         } catch (err) {
             callback(err);
             return;
@@ -326,7 +326,7 @@ define(function(require) {
     //
     // Helper Functions
     //
-    
+
     /**
      * Converts a Uint8Array to an 8-bit binary string
      * @param  {Uint8Array} arr The array to convert into a string
@@ -342,7 +342,7 @@ define(function(require) {
         return str;
     }
 
-    
+
 
     return PgpMailer;
 });

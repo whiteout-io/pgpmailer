@@ -73,7 +73,11 @@ require.config({
         'pbe': '../node_modules/mailbuilder/node_modules/mimelib/node_modules/node-shims/node_modules/node-forge/js/pbe',
         'rsa': '../node_modules/mailbuilder/node_modules/mimelib/node_modules/node-shims/node_modules/node-forge/js/rsa',
         'md5': '../node_modules/mailbuilder/node_modules/mimelib/node_modules/node-shims/node_modules/node-forge/js/md5',
-        'sha256': '../node_modules/mailbuilder/node_modules/mimelib/node_modules/node-shims/node_modules/node-forge/js/sha256'
+        'sha256': '../node_modules/mailbuilder/node_modules/mimelib/node_modules/node-shims/node_modules/node-forge/js/sha256',
+        'mailparser': '../node_modules/mailparser/src/mailparser',
+        'datetime': '../node_modules/mailparser/src/datetime',
+        'streams': '../node_modules/mailparser/src/streams',
+        'mime': '../node_modules/mailparser/node_modules/mime/src/mime',
     },
     shim: {
         'sinon': {
@@ -83,7 +87,7 @@ require.config({
 });
 
 mocha.setup('bdd');
-require(['unit'], function() {
+require(['unit', 'integration'], function() {
     if (window.mochaPhantomJS) {
         mochaPhantomJS.run();
     } else {
