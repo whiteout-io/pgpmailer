@@ -113,7 +113,8 @@ define(function(require) {
     PgpMailer.prototype._createMimeTree = function() {
         var mail = this._current.mail,
             builder = this._current.builder,
-            parentNode, contentNode, signatureNode;
+            parentNode, contentNode, signatureNode,
+            cleartext, signedCleartext, signatureHeader;
 
 
         // 
@@ -211,7 +212,6 @@ define(function(require) {
         // Sign the whole thing
         //
 
-        openpgp.config.prefer_hash_algorithm = openpgp.enums.hash.sha256;
         signatureNode = parentNode.createNode([{
             key: 'Content-Type',
             value: 'application/pgp-signature'
@@ -219,7 +219,12 @@ define(function(require) {
             key: 'Content-Transfer-Encoding',
             value: '7bit'
         }]);
-        signatureNode.content = "-----BEGIN PGP SIGNATURE-----" + openpgp.signClearMessage(this._privateKey, contentNode.build()).split("-----BEGIN PGP SIGNATURE-----").pop();
+
+        cleartext = contentNode.build();
+        openpgp.config.prefer_hash_algorithm = openpgp.enums.hash.sha256;
+        signedCleartext = openpgp.signClearMessage([this._privateKey], cleartext);
+        signatureHeader = "-----BEGIN PGP SIGNATURE-----";
+        signatureNode.content = signatureHeader + signedCleartext.split(signatureHeader).pop();
     };
 
     PgpMailer.prototype._encrypt = function() {
