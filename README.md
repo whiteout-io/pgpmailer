@@ -71,7 +71,6 @@ Here's what you do in you own app
         },
         privateKey: 'ASCII ARMORED PRIVATE KEY',
         passphrase: 'PASSPHRASE'
-
     });
 
     var armoredPublicKeys = ['ASCII ARMORED PUBLIC KEY OF THE SENDER', 'RECEIVER KEY', 'ANOTHER RECEIVER KEY', 'COPY RECEIVER KEY', 'BLINDCOPY RECEIVER KEY'];
