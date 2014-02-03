@@ -28,12 +28,17 @@ define(function(require) {
                 tls: {
                     ca: ['TRUSTY CA']
                 },
-                privateKey: 'ASCII ARMORED PBKDF2 ENCRYPTED PRIVATE KEY',
-                passphrase: 'PASSPHRASE',
                 onError: function(error) {
                     console.error(error);
                 }
 
+            });
+
+            mailer.setPrivateKey({
+                privateKey: 'ASCII ARMORED PBKDF2 ENCRYPTED PRIVATE KEY',
+                passphrase: 'PASSPHRASE'
+            }, function(error) {
+                expect(error).to.not.exist;
             });
 
             var armoredPublicKeys = ['ASCII ARMORED PUBLIC KEY OF THE SENDER', 'FIRST RECEIVER KEY', 'ANOTHER RECEIVER KEY', 'COPY RECEIVER KEY', 'BLINDCOPY RECEIVER KEY'];

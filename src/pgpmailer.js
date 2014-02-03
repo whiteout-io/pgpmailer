@@ -21,27 +21,12 @@ define(function(require) {
      * @param {String} options.auth.pass Password for login
      * @param {Boolean} options.secureConnection Indicates if the connection is using TLS or not
      * @param {String} options.tls Further optional object for tls.connect, e.g. { ca: 'PIN YOUR CA HERE' }
-     * @param {String} options.privateKey ASCII-armored PBKDF2-encrypted private key to sign the messages
-     * @param {String} options.passphrase The passphrase to encrypt options.armoredPrivateKey
      * @param {String} options.onError Top-level error handler with information if an error occurred
      */
     PgpMailer = function(options, pgp, smtp) {
         this._queue = [];
         this._busy = true;
         this._current = undefined;
-
-        try {
-            // decrypt the private key (for signing)
-            var privateKey = openpgp.key.readArmored(options.privateKey).keys[0];
-            if (!privateKey.decrypt(options.passphrase)) {
-                options.onError(new Error('Could not decrypt the private key!'));
-                return;
-            }
-            this._privateKey = privateKey;
-        } catch (err) {
-            options.onError(err);
-            return;
-        }
 
         this._pgp = pgp || openpgp;
         this._smtp = (smtp || simplesmtp).connect(options.port, options.host, options);
@@ -60,6 +45,31 @@ define(function(require) {
     };
 
     /**
+     * Set the private key used to sign your messages
+     * @param {String} options.privateKey ASCII-armored private key to sign the messages
+     * @param {String} options.passphrase The passphrase to encrypt options.armoredPrivateKey
+     * @param {Function} callback(error) Indicates that the private key has been set, or provides error information
+     */
+    PgpMailer.prototype.setPrivateKey = function(options, callback) {
+        var privateKey;
+
+        try {
+            // decrypt the private key (for signing)
+            privateKey = openpgp.key.readArmored(options.privateKey).keys[0];
+            if (!privateKey.decrypt(options.passphrase)) {
+                callback(new Error('Wrong passphrase! Could not decrypt the private key!'));
+                return;
+            }
+        } catch (err) {
+            callback(err);
+            return;
+        }
+
+        this._privateKey = privateKey;
+        callback();
+    };
+
+    /**
      * Queues a mail object for sending.
      * @param {Object} mail.from Object with the ASCII string representing the sender address, e.g. 'foo@bar.io'
      * @param {Array} mail.to Array of objects with the ASCII string representing the recipient (e.g. ['the.dude@lebowski.com', 'donny@kerabatsos.com'])
@@ -73,6 +83,11 @@ define(function(require) {
      * @param {Function} callback(error) Indicates that the mail has been sent, or gives information in case an error occurred.
      */
     PgpMailer.prototype.send = function(mail, armoredPublicKeys, callback, builder) {
+        if (!this._privateKey) {
+            callback(new Error('No private key has been set. Cannot sign mails!'));
+            return;
+        }
+
         this._queue.push({
             builder: builder || new Mailbuilder(),
             mail: mail,
