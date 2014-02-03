@@ -203,7 +203,7 @@ define(function(require) {
                     parameters: {
                         filename: attmt.fileName
                     }
-                }]).content = String.fromCharCode.apply(null, attmt.uint8Array); // converts a UInt8Array to an 8-bit binary string
+                }]).content = arr2str(attmt.uint8Array);
             });
         }
 
@@ -317,6 +317,27 @@ define(function(require) {
         this._smtp.once('end', callback);
         this._smtp.quit();
     };
+
+    //
+    // Helper Functions
+    //
+    
+    /**
+     * Converts a Uint8Array to an 8-bit binary string
+     * @param  {Uint8Array} arr The array to convert into a string
+     * @return {String}     An 8-bit binary string
+     */
+    function arr2str(arr) {
+        var i, l, str = '';
+
+        for (i = 0, l = arr.length; i < l; i++) {
+            str += String.fromCharCode(arr[i]);
+        }
+
+        return str;
+    }
+
+    
 
     return PgpMailer;
 });
