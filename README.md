@@ -69,7 +69,7 @@ Here's what you do in you own app
         tls: {
             ca: ['PIN THE CERTIFICATE OF YOUR PROVIDER OF CHOICE'] // because why wouldn't you?
         },
-        privateKey: 'ASCII ARMORED PBKDF2 ENCRYPTED PRIVATE KEY',
+        privateKey: 'ASCII ARMORED PRIVATE KEY',
         passphrase: 'PASSPHRASE'
 
     });
