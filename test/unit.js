@@ -186,7 +186,7 @@ define(function(require) {
                 signAndEncryptStub = sinon.stub(openpgp, 'signAndEncryptMessage');
                 signAndEncryptStub.returns(mockCiphertext);
                 signClearStub = sinon.stub(openpgp, 'signClearMessage');
-                signClearStub.withArgs(mailer._privateKey).returns(mockSignature);
+                signClearStub.withArgs([mailer._privateKey]).returns(mockSignature);
 
                 builderMock.build.returns(mockCompiledMail);
                 builderMock.getEnvelope.returns({});
