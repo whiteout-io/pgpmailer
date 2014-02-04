@@ -15,7 +15,7 @@ module.exports = function(grunt) {
                 options: {
                     reporter: 'dot'
                 },
-                src: ['test/unit.js']
+                src: ['test/unit.js', 'test/integration.js']
             },
             example: {
                 options: {

@@ -87,10 +87,13 @@ require.config({
 });
 
 mocha.setup('bdd');
-require(['unit', 'integration'], function() {
-    if (window.mochaPhantomJS) {
+if (window.mochaPhantomJS) {
+    // the integration test does not work in phantomjs
+    require(['unit'], function() {
         mochaPhantomJS.run();
-    } else {
+    });
+} else {
+    require(['unit', 'integration'], function() {
         mocha.run();
-    }
-});
+    });
+}
