@@ -71,15 +71,15 @@ define(function(require) {
 
     /**
      * Queues a mail object for sending.
-     * @param {Object} options.cleartextMessage A clear text message in addition to the encrypted message
+     * @param {Boolean} options.encrypt (optional) If true, the message will be encrypted with the public keys in options.publicKeysArmored. Otherwise, the message will be signed with the private key and sent in the clear. Default: false
      * @param {Object} options.mail.from Array containing one object with the ASCII string representing the sender address, e.g. 'foo@bar.io'
-     * @param {Array} options.mail.to Array of objects with the ASCII string representing the recipient (e.g. ['the.dude@lebowski.com', 'donny@kerabatsos.com'])
-     * @param {Object} options.mail.cc Array of objects with the ASCII string representing the recipient, see mail.to
-     * @param {Object} options.mail.bcc Array of objects with the ASCII string representing the recipient, see mail.to
-     * @param {Array} options.mail.publicKeys The public keys with which the message should be encrypted
+     * @param {Array} options.mail.to (optional) Array of objects with the ASCII string representing the recipient (e.g. ['the.dude@lebowski.com', 'donny@kerabatsos.com'])
+     * @param {Object} options.mail.cc (optional) Array of objects with the ASCII string representing the recipient, see mail.to
+     * @param {Object} options.mail.bcc (optional) Array of objects with the ASCII string representing the recipient, see mail.to
      * @param {String} options.mail.subject String containing with the mail's subject
      * @param {String} options.mail.body Plain text body to be sent with the mail
-     * @param {Array} options.mail.attachments Array of attachment objects with fileName {String}, uint8Array {Uint8Array}, and contentType {String}
+     * @param {Array} options.mail.attachments (optional) Array of attachment objects with fileName {String}, uint8Array {Uint8Array}, and contentType {String}
+     * @param {Object} options.cleartextMessage (optional) A clear text message in addition to the encrypted message
      * @param {Array} options.publicKeysArmored The public keys with which the message should be encrypted
      * @param {Function} callback(error) Indicates that the mail has been sent, or gives information in case an error occurred.
      */
@@ -92,6 +92,7 @@ define(function(require) {
         this._queue.push({
             builder: builder || new Mailbuilder(),
             mail: options.mail,
+            encrypt: options.encrypt,
             cleartextMessage: options.cleartextMessage,
             publicKeysArmored: options.publicKeysArmored,
             callback: callback
@@ -108,7 +109,10 @@ define(function(require) {
         this._current = this._queue.shift();
 
         this._createMimeTree();
-        this._encrypt();
+        if (this._current.encrypt) {
+            // if necessary, encrypt the message!
+            this._encrypt();
+        }
         this._send();
     };
 

@@ -205,6 +205,7 @@ define(function(require) {
                 // queue the mail
                 mailer.send({
                     mail: mail,
+                    encrypt: true,
                     publicKeysArmored: publicKeysArmored,
                     cleartextMessage: cleartextMessage
                 }, cb);

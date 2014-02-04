@@ -95,11 +95,23 @@ Here's what you do in you own app
         }]
     };
     var cleartextMessage = 'This message is prepended to your encrypted message and displayed in the clear even if your recipient does not speak PGP!';
-    
+
     mailer.send({
         mail: mail,
+        encrypt: true,
         publicKeysArmored: publicKeysArmored,
         cleartextMessage: cleartextMessage
+    }, function(error) {
+        // do something useful with the error
+    });
+
+
+If you **do not want to encrypt** your message, but instead just want to sign it, just do the following
+
+    // instantiate the pgpmailer and set your public key, then
+    mailer.send({
+        mail: mail,
+        encrypt: false
     }, function(error) {
         // do something useful with the error
     });

@@ -59,6 +59,7 @@ define(function(require) {
 
             mailer.send({
                 mail: mail,
+                encrypt: true,
                 publicKeysArmored: publicKeysArmored,
                 cleartextMessage: cleartextMessage
             }, function(err) {
