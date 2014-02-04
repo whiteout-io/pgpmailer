@@ -131,7 +131,7 @@ define(function(require) {
             it('should send a message with attachments and decode the output correctly', function(done) {
                 this.timeout(10000);
 
-                var cb, mail, armoredPublicKeys;
+                var cb, mail, armoredPublicKeys, attachmentPayload;
 
                 //
                 // Setup Fixture
@@ -142,6 +142,7 @@ define(function(require) {
                 };
 
                 armoredPublicKeys = [pubkeyArmored];
+                attachmentPayload = 'attachment1';
                 mail = {
                     from: {
                         address: 'a@a.io'
@@ -156,7 +157,7 @@ define(function(require) {
                     attachments: [{
                         contentType: 'text/plain',
                         fileName: 'a.txt',
-                        uint8Array: utf16ToUInt8Array('attachment1')
+                        uint8Array: utf16ToUInt8Array(attachmentPayload)
                     }]
                 };
 
@@ -179,6 +180,7 @@ define(function(require) {
                     parser.on('end', function(parsedMail) {
                         expect(parsedMail).to.exist;
                         expect(parsedMail.text.replace(/\n/g, '')).to.equal(mail.text);
+                        expect(parsedMail.attachments[0].content.toString('binary')).to.equal(attachmentPayload);
                         
                         // var signatureArmored = parsedMail.attachments[1].content.toString('binary');
                         // var signatureMessage = openpgp.message.readArmored(signatureArmored);
