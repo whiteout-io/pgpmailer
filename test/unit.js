@@ -172,9 +172,9 @@ define(function(require) {
 
                 armoredPublicKeys = ['publicA', 'publicB', 'publicC', 'publicD', 'publicE'];
                 mail = {
-                    from: {
+                    from: [{
                         address: 'a@a.io'
-                    },
+                    }],
                     to: [{
                         address: 'b@b.io'
                     }, {
@@ -326,7 +326,7 @@ define(function(require) {
                 expect(builderMock.addCc.calledOnce).to.be.true;
                 expect(builderMock.addBcc.calledOnce).to.be.true;
                 expect(builderMock.setSubject.calledWith(mail.subject)).to.be.true;
-                expect(builderMock.setFrom.calledWith(mail.from.address)).to.be.true;
+                expect(builderMock.setFrom.calledWith(mail.from[0].address)).to.be.true;
                 expect(builderMock.addTo.calledWith(mail.to[0].address)).to.be.true;
                 expect(builderMock.addTo.calledWith(mail.to[1].address)).to.be.true;
                 expect(builderMock.addCc.calledWith(mail.cc[0].address)).to.be.true;

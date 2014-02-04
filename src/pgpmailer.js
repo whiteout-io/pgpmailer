@@ -71,7 +71,7 @@ define(function(require) {
 
     /**
      * Queues a mail object for sending.
-     * @param {Object} mail.from Object with the ASCII string representing the sender address, e.g. 'foo@bar.io'
+     * @param {Object} mail.from Array containing one object with the ASCII string representing the sender address, e.g. 'foo@bar.io'
      * @param {Array} mail.to Array of objects with the ASCII string representing the recipient (e.g. ['the.dude@lebowski.com', 'donny@kerabatsos.com'])
      * @param {Object} mail.cc Array of objects with the ASCII string representing the recipient, see mail.to
      * @param {Object} mail.bcc Array of objects with the ASCII string representing the recipient, see mail.to
@@ -124,7 +124,7 @@ define(function(require) {
         builder.setSubject(mail.subject);
 
         // add everyone's addresses
-        builder.setFrom(mail.from.address || mail.from);
+        builder.setFrom(mail.from[0].address || mail.from[0]);
 
         if (mail.to) {
             mail.to.forEach(function(recipient) {

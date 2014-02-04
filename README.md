@@ -82,7 +82,7 @@ Here's what you do in you own app
     // execute this after pgpmailer.setPrivateKey invoked its callback and the private key is set
     var armoredPublicKeys = ['ASCII ARMORED PUBLIC KEY OF THE SENDER', 'RECEIVER KEY', 'ANOTHER RECEIVER KEY', 'COPY RECEIVER KEY', 'BLINDCOPY RECEIVER KEY'];
     var mail = {
-        from: 'sender@foobar.com',
+        from: ['sender@foobar.com'],
         to: ['recipient@foobar.com', 'another_recipient@foobar.com'],
         cc: ['receive.a.copy@foobar.com'],
         bcc: ['blindcopy@foobar.com'],

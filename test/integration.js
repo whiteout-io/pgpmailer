@@ -144,9 +144,9 @@ define(function(require) {
                 armoredPublicKeys = [pubkeyArmored];
                 attachmentPayload = 'attachment1';
                 mail = {
-                    from: {
+                    from: [{
                         address: 'a@a.io'
-                    },
+                    }],
                     to: [{
                         address: 'b@b.io'
                     }, {
@@ -181,7 +181,7 @@ define(function(require) {
                         expect(parsedMail).to.exist;
                         expect(parsedMail.text.replace(/\n/g, '')).to.equal(mail.body);
                         expect(parsedMail.attachments[0].content.toString('binary')).to.equal(attachmentPayload);
-                        
+
                         // var signatureArmored = parsedMail.attachments[1].content.toString('binary');
                         // var signatureMessage = openpgp.message.readArmored(signatureArmored);
 
