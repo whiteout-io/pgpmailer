@@ -71,18 +71,19 @@ define(function(require) {
 
     /**
      * Queues a mail object for sending.
-     * @param {Object} mail.from Array containing one object with the ASCII string representing the sender address, e.g. 'foo@bar.io'
-     * @param {Array} mail.to Array of objects with the ASCII string representing the recipient (e.g. ['the.dude@lebowski.com', 'donny@kerabatsos.com'])
-     * @param {Object} mail.cc Array of objects with the ASCII string representing the recipient, see mail.to
-     * @param {Object} mail.bcc Array of objects with the ASCII string representing the recipient, see mail.to
-     * @param {Array} mail.publicKeys The public keys with which the message should be encrypted
-     * @param {String} mail.subject String containing with the mail's subject
-     * @param {String} mail.body Plain text body to be sent with the mail
-     * @param {Array} mail.attachments Array of attachment objects with fileName {String}, uint8Array {Uint8Array}, and contentType {String}
-     * @param {Array} armoredPublicKeys The public keys with which the message should be encrypted
+     * @param {Object} options.cleartextMessage A clear text message in addition to the encrypted message
+     * @param {Object} options.mail.from Array containing one object with the ASCII string representing the sender address, e.g. 'foo@bar.io'
+     * @param {Array} options.mail.to Array of objects with the ASCII string representing the recipient (e.g. ['the.dude@lebowski.com', 'donny@kerabatsos.com'])
+     * @param {Object} options.mail.cc Array of objects with the ASCII string representing the recipient, see mail.to
+     * @param {Object} options.mail.bcc Array of objects with the ASCII string representing the recipient, see mail.to
+     * @param {Array} options.mail.publicKeys The public keys with which the message should be encrypted
+     * @param {String} options.mail.subject String containing with the mail's subject
+     * @param {String} options.mail.body Plain text body to be sent with the mail
+     * @param {Array} options.mail.attachments Array of attachment objects with fileName {String}, uint8Array {Uint8Array}, and contentType {String}
+     * @param {Array} options.publicKeysArmored The public keys with which the message should be encrypted
      * @param {Function} callback(error) Indicates that the mail has been sent, or gives information in case an error occurred.
      */
-    PgpMailer.prototype.send = function(mail, armoredPublicKeys, callback, builder) {
+    PgpMailer.prototype.send = function(options, callback, builder) {
         if (!this._privateKey) {
             callback(new Error('No private key has been set. Cannot sign mails!'));
             return;
@@ -90,8 +91,9 @@ define(function(require) {
 
         this._queue.push({
             builder: builder || new Mailbuilder(),
-            mail: mail,
-            armoredPublicKeys: armoredPublicKeys,
+            mail: options.mail,
+            cleartextMessage: options.cleartextMessage,
+            publicKeysArmored: options.publicKeysArmored,
             callback: callback
         });
 
@@ -230,16 +232,18 @@ define(function(require) {
     PgpMailer.prototype._encrypt = function() {
         var builder = this._current.builder,
             callback = this._current.callback,
-            armoredPublicKeys = this._current.armoredPublicKeys,
+            cleartextMessage = this._current.cleartextMessage,
+            publicKeysArmored = this._current.publicKeysArmored,
             publicKeys = [],
-            plaintext, ciphertext, parentNode;
+            plaintext, ciphertext,
+            multipartParentNode, encryptedNode;
 
         // prepare the plain text mime nodes
         plaintext = builder.node.build();
 
         try {
             // parse the ASCII-armored public keys
-            armoredPublicKeys.forEach(function(key) {
+            publicKeysArmored.forEach(function(key) {
                 publicKeys.push(openpgp.key.readArmored(key).keys[0]);
             });
 
@@ -253,8 +257,30 @@ define(function(require) {
         // delete the plain text from the builder
         delete builder.node;
 
+        // do we need to frame the encrypted message with a clear text?
+        if (cleartextMessage) {
+            // create a multipart/mixed message
+            multipartParentNode = builder.createNode([{
+                key: 'Content-Type',
+                value: 'multipart/mixed',
+            }]);
+
+            multipartParentNode.createNode([{
+                key: 'Content-Type',
+                value: 'text/plain',
+                parameters: {
+                    charset: 'utf-8'
+                }
+            }, {
+                key: 'Content-Transfer-Encoding',
+                value: 'quoted-printable'
+            }]).content = cleartextMessage;
+        }
+
         // create a pgp/mime message
-        parentNode = builder.createNode([{
+        // either pin the encrypted mime-subtree under the multipart/mixed node, OR 
+        // create a top-level multipart/encrypted node
+        encryptedNode = (multipartParentNode || builder).createNode([{
             key: 'Content-Type',
             value: 'multipart/encrypted',
             parameters: {
@@ -267,10 +293,10 @@ define(function(require) {
             key: 'Content-Description',
             value: 'OpenPGP encrypted message'
         }]);
-        parentNode.content = 'This is an OpenPGP/MIME encrypted message.';
+        encryptedNode.content = 'This is an OpenPGP/MIME encrypted message.';
 
         // set the version info
-        parentNode.createNode([{
+        encryptedNode.createNode([{
             key: 'Content-Type',
             value: 'application/pgp-encrypted'
         }, {
@@ -282,7 +308,7 @@ define(function(require) {
         }]).content = 'Version: 1';
 
         // set the ciphertext
-        parentNode.createNode([{
+        encryptedNode.createNode([{
             key: 'Content-Type',
             value: 'application/octet-stream'
         }, {

@@ -28,7 +28,7 @@ define(function(require) {
     describe('unit tests', function() {
         var mailer, smtpMock, ready, builderMock,
             rootNodeMock, contentNodeMock, signatureNodeMock,
-            encryptedRootMock;
+            encryptedRootMock, multipartRootMock;
 
         beforeEach(function() {
             var opts;
@@ -36,6 +36,8 @@ define(function(require) {
             rootNodeMock = sinon.createStubInstance(Mailbuilder.Node);
             contentNodeMock = sinon.createStubInstance(Mailbuilder.Node);
             signatureNodeMock = sinon.createStubInstance(Mailbuilder.Node);
+
+            multipartRootMock = sinon.createStubInstance(Mailbuilder.Node);
             encryptedRootMock = sinon.createStubInstance(Mailbuilder.Node);
             builderMock = sinon.createStubInstance(Mailbuilder);
             builderMock.node = rootNodeMock;
@@ -160,7 +162,7 @@ define(function(require) {
         describe('send', function() {
             it('should send a message with attachments when ready', function() {
                 var cb, mail, mockCiphertext, mockPlaintext, mockCompiledMail, mockSignature,
-                    readArmoredStub, signAndEncryptStub, signClearStub, armoredPublicKeys;
+                    readArmoredStub, signAndEncryptStub, signClearStub, publicKeysArmored;
 
                 //
                 // Setup Fixture
@@ -170,7 +172,7 @@ define(function(require) {
                     expect(err).to.not.exist;
                 };
 
-                armoredPublicKeys = ['publicA', 'publicB', 'publicC', 'publicD', 'publicE'];
+                publicKeysArmored = ['publicA', 'publicB', 'publicC', 'publicD', 'publicE'];
                 mail = {
                     from: [{
                         address: 'a@a.io'
@@ -220,24 +222,12 @@ define(function(require) {
                         protocol: 'application/pgp-signature'
                     }
                 }]).returns(rootNodeMock);
-                builderMock.createNode.withArgs([{
-                    key: 'Content-Type',
-                    value: 'multipart/encrypted',
-                    parameters: {
-                        protocol: 'application/pgp-encrypted'
-                    }
-                }, {
-                    key: 'Content-Transfer-Encoding',
-                    value: '7bit'
-                }, {
-                    key: 'Content-Description',
-                    value: 'OpenPGP encrypted message'
-                }]).returns(encryptedRootMock);
 
                 rootNodeMock.createNode.withArgs([{
                     key: 'Content-Type',
                     value: 'multipart/mixed',
                 }]).returns(contentNodeMock);
+
                 rootNodeMock.createNode.withArgs([{
                     key: 'Content-Type',
                     value: 'application/pgp-signature'
@@ -245,6 +235,7 @@ define(function(require) {
                     key: 'Content-Transfer-Encoding',
                     value: '7bit'
                 }]).returns(signatureNodeMock);
+
                 contentNodeMock.createNode.withArgs([{
                     key: 'Content-Type',
                     value: 'text/plain',
@@ -255,6 +246,7 @@ define(function(require) {
                     key: 'Content-Transfer-Encoding',
                     value: 'quoted-printable'
                 }]).returns({});
+
                 contentNodeMock.createNode.withArgs([{
                     key: 'Content-Type',
                     value: mail.attachments[0].contentType
@@ -268,6 +260,37 @@ define(function(require) {
                         filename: mail.attachments[0].fileName
                     }
                 }]).returns({});
+
+                builderMock.createNode.withArgs([{
+                    key: 'Content-Type',
+                    value: 'multipart/mixed',
+                }]).returns(multipartRootMock);
+
+                multipartRootMock.createNode.withArgs([{
+                    key: 'Content-Type',
+                    value: 'text/plain',
+                    parameters: {
+                        charset: 'utf-8'
+                    }
+                }, {
+                    key: 'Content-Transfer-Encoding',
+                    value: 'quoted-printable'
+                }]).returns({});
+
+                multipartRootMock.createNode.withArgs([{
+                    key: 'Content-Type',
+                    value: 'multipart/encrypted',
+                    parameters: {
+                        protocol: 'application/pgp-encrypted'
+                    }
+                }, {
+                    key: 'Content-Transfer-Encoding',
+                    value: '7bit'
+                }, {
+                    key: 'Content-Description',
+                    value: 'OpenPGP encrypted message'
+                }]).returns(encryptedRootMock);
+
                 encryptedRootMock.createNode.withArgs([{
                     key: 'Content-Type',
                     value: 'application/pgp-encrypted'
@@ -278,6 +301,7 @@ define(function(require) {
                     key: 'Content-Description',
                     value: 'PGP/MIME Versions Identification'
                 }]).returns({});
+
                 encryptedRootMock.createNode.withArgs([{
                     key: 'Content-Type',
                     value: 'application/octet-stream'
@@ -302,7 +326,11 @@ define(function(require) {
                 //
 
                 // queue the mail
-                mailer.send(mail, armoredPublicKeys, cb, builderMock);
+                mailer.send({
+                    mail: mail,
+                    publicKeysArmored: publicKeysArmored,
+                    cleartextMessage: 'hello!'
+                }, cb, builderMock);
 
                 // check that the message is queued
                 expect(mailer._queue.length).to.equal(1);
@@ -354,8 +382,8 @@ define(function(require) {
 
                 // check that the pgp lib was called
                 expect(signClearStub.calledOnce).to.be.true;
-                expect(readArmoredStub.callCount).to.equal(armoredPublicKeys.length);
-                armoredPublicKeys.forEach(function(armored) {
+                expect(readArmoredStub.callCount).to.equal(publicKeysArmored.length);
+                publicKeysArmored.forEach(function(armored) {
                     expect(readArmoredStub.calledWith(armored)).to.be.true;
                 });
                 expect(signAndEncryptStub.calledOnce).to.be.true;
@@ -369,7 +397,11 @@ define(function(require) {
             it('should not send without a private key', function(done) {
                 delete mailer._privateKey;
 
-                mailer.send({}, [], function(error) {
+                mailer.send({
+                    mail: {},
+                    publicKeysArmored: [],
+                    cleartextMessage: 'hello!'
+                }, function(error) {
                     expect(error).to.exist;
 
                     done();

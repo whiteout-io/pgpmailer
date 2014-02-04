@@ -131,7 +131,7 @@ define(function(require) {
             it('should send a message with attachments and decode the output correctly', function(done) {
                 this.timeout(10000);
 
-                var cb, mail, armoredPublicKeys, attachmentPayload;
+                var cb, mail, publicKeysArmored, attachmentPayload, cleartextMessage;
 
                 //
                 // Setup Fixture
@@ -141,7 +141,8 @@ define(function(require) {
                     expect(err).to.not.exist;
                 };
 
-                armoredPublicKeys = [pubkeyArmored];
+                cleartextMessage = 'yes! this is very secure!';
+                publicKeysArmored = [pubkeyArmored];
                 attachmentPayload = 'attachment1';
                 mail = {
                     from: [{
@@ -164,6 +165,9 @@ define(function(require) {
                 smtpMock.on.withArgs('message').yields();
                 smtpMock.end.withArgs(sinon.match(function(args) {
                     var sentRFCMessage = args;
+
+                    expect(sentRFCMessage).to.contain(cleartextMessage);
+
                     var pgpPrefix = '-----BEGIN PGP MESSAGE-----';
                     var pgpSuffix = '-----END PGP MESSAGE-----';
                     var pgpMessage = pgpPrefix + sentRFCMessage.split(pgpPrefix).pop().split(pgpSuffix).shift() + pgpSuffix;
@@ -199,7 +203,11 @@ define(function(require) {
                 //
 
                 // queue the mail
-                mailer.send(mail, armoredPublicKeys, cb);
+                mailer.send({
+                    mail: mail,
+                    publicKeysArmored: publicKeysArmored,
+                    cleartextMessage: cleartextMessage
+                }, cb);
 
                 // check that the message is queued
                 expect(mailer._queue.length).to.equal(1);

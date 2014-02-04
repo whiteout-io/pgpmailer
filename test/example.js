@@ -41,7 +41,7 @@ define(function(require) {
                 expect(error).to.not.exist;
             });
 
-            var armoredPublicKeys = ['ASCII ARMORED PUBLIC KEY OF THE SENDER', 'FIRST RECEIVER KEY', 'ANOTHER RECEIVER KEY', 'COPY RECEIVER KEY', 'BLINDCOPY RECEIVER KEY'];
+            var publicKeysArmored = ['ASCII ARMORED PUBLIC KEY OF THE SENDER', 'FIRST RECEIVER KEY', 'ANOTHER RECEIVER KEY', 'COPY RECEIVER KEY', 'BLINDCOPY RECEIVER KEY'];
             var mail = {
                 from: ['sender@foobar.com'],
                 to: ['recipient@foobar.com', 'another_recipient@foobar.com'],
@@ -55,8 +55,13 @@ define(function(require) {
                     uint8Array: utf16ToUInt8Array('I AM THE MIGHTY ATTACHMENT!')
                 }]
             };
+            var cleartextMessage = 'This message is prepended to your encrypted message and displayed in the clear even if your recipient does not speak PGP!';
 
-            mailer.send(mail, armoredPublicKeys, function(err) {
+            mailer.send({
+                mail: mail,
+                publicKeysArmored: publicKeysArmored,
+                cleartextMessage: cleartextMessage
+            }, function(err) {
                 expect(err).to.not.exist;
                 done();
             });
