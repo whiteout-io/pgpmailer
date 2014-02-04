@@ -48,7 +48,7 @@ define(function(require) {
                 cc: ['receive.a.copy@foobar.com'],
                 bcc: ['blindcopy@foobar.com'],
                 subject: 'hello, pgp',
-                text: 'hello, world!',
+                body: 'hello, world!',
                 attachments: [{
                     contentType: 'text/plain',
                     fileName: 'foobar.txt',

@@ -153,7 +153,7 @@ define(function(require) {
                         address: 'c@c.io'
                     }],
                     subject: 'foobar',
-                    text: 'hello, world!',
+                    body: 'hello, world!',
                     attachments: [{
                         contentType: 'text/plain',
                         fileName: 'a.txt',
@@ -179,7 +179,7 @@ define(function(require) {
                     var parser = new MailParser();
                     parser.on('end', function(parsedMail) {
                         expect(parsedMail).to.exist;
-                        expect(parsedMail.text.replace(/\n/g, '')).to.equal(mail.text);
+                        expect(parsedMail.text.replace(/\n/g, '')).to.equal(mail.body);
                         expect(parsedMail.attachments[0].content.toString('binary')).to.equal(attachmentPayload);
                         
                         // var signatureArmored = parsedMail.attachments[1].content.toString('binary');

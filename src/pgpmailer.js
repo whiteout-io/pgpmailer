@@ -77,7 +77,7 @@ define(function(require) {
      * @param {Object} mail.bcc Array of objects with the ASCII string representing the recipient, see mail.to
      * @param {Array} mail.publicKeys The public keys with which the message should be encrypted
      * @param {String} mail.subject String containing with the mail's subject
-     * @param {String} mail.text Plain text to be sent with the mail
+     * @param {String} mail.body Plain text body to be sent with the mail
      * @param {Array} mail.attachments Array of attachment objects with fileName {String}, uint8Array {Uint8Array}, and contentType {String}
      * @param {Array} armoredPublicKeys The public keys with which the message should be encrypted
      * @param {Function} callback(error) Indicates that the mail has been sent, or gives information in case an error occurred.
@@ -170,7 +170,7 @@ define(function(require) {
                 key: 'Content-Transfer-Encoding',
                 value: 'quoted-printable'
             }]);
-            contentNode.content = mail.text;
+            contentNode.content = mail.body;
         } else {
             // we have attachments, so let's create a multipart/mixed mail
             contentNode = parentNode.createNode([{
@@ -188,7 +188,7 @@ define(function(require) {
             }, {
                 key: 'Content-Transfer-Encoding',
                 value: 'quoted-printable'
-            }]).content = mail.text;
+            }]).content = mail.body;
 
             // add the attachments
             mail.attachments.forEach(function(attmt) {

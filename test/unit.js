@@ -187,7 +187,7 @@ define(function(require) {
                         address: 'e@e.io'
                     }],
                     subject: 'foobar',
-                    text: 'hello, world!',
+                    body: 'hello, world!',
                     attachments: [{
                         contentType: 'text/plain',
                         fileName: 'a.txt',
