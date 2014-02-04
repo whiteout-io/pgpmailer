@@ -159,7 +159,7 @@ define(function(require) {
         }]);
 
         // this a plain text mail? then only one text/plain node is needed
-        if (mail.attachments.length === 0) {
+        if (mail.attachments && mail.attachments.length === 0) {
             contentNode = parentNode.createNode([{
                 key: 'Content-Type',
                 value: 'text/plain',
