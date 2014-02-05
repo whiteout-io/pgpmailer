@@ -143,7 +143,7 @@ define(function(require) {
 
                 cleartextMessage = 'yes! this is very secure!';
                 publicKeysArmored = [pubkeyArmored];
-                attachmentPayload = 'attachment1';
+                attachmentPayload = "asdasdasdsadasdasdasdsadasdasdasdsadasdasdasdsadasdasdasdsadasdasdasdsadasdasdasdsadasdasdasdsadasdasdasdsadasdasdasdsadasdasdasdsadasdasdasdsadasdasdasdsad";
                 mail = {
                     from: [{
                         address: 'a@a.io'
@@ -156,7 +156,7 @@ define(function(require) {
                     subject: 'foobar',
                     body: 'hello, world!',
                     attachments: [{
-                        contentType: 'text/plain',
+                        contentType: 'text/x-markdown',
                         fileName: 'a.txt',
                         uint8Array: utf16ToUInt8Array(attachmentPayload)
                     }]
