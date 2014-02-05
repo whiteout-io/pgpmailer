@@ -131,7 +131,7 @@ define(function(require) {
             it('should send a message with attachments and decode the output correctly', function(done) {
                 this.timeout(10000);
 
-                var cb, mail, publicKeysArmored, attachmentPayload, cleartextMessage;
+                var cb, mail, publicKeysArmored, expectedAttachmentPayload, cleartextMessage;
 
                 //
                 // Setup Fixture
@@ -143,7 +143,18 @@ define(function(require) {
 
                 cleartextMessage = 'yes! this is very secure!';
                 publicKeysArmored = [pubkeyArmored];
-                attachmentPayload = "asdasdasdsadasdasdasdsadasdasdasdsadasdasdasdsadasdasdasdsadasdasdasdsadasdasdasdsadasdasdasdsadasdasdasdsadasdasdasdsadasdasdasdsadasdasdasdsadasdasdasdsad";
+
+                var size = 10000;
+                if (typeof window !== 'undefined' && window.crypto && window.crypto.getRandomValues) {
+                    var arr = new Uint8Array(size);
+                    window.crypto.getRandomValues(arr);
+                    expectedAttachmentPayload = arr;
+                } else {
+                    // node.js
+                    var randomBinStr = require('crypto').randomBytes(size).toString('binary');
+                    expectedAttachmentPayload = utf8ToUInt8Array(randomBinStr);
+                }
+
                 mail = {
                     from: [{
                         address: 'a@a.io'
@@ -158,7 +169,7 @@ define(function(require) {
                     attachments: [{
                         contentType: 'text/x-markdown',
                         fileName: 'a.txt',
-                        uint8Array: utf16ToUInt8Array(attachmentPayload)
+                        uint8Array: expectedAttachmentPayload
                     }]
                 };
 
@@ -184,7 +195,10 @@ define(function(require) {
                     parser.on('end', function(parsedMail) {
                         expect(parsedMail).to.exist;
                         expect(parsedMail.text.replace(/\n/g, '')).to.equal(mail.body);
-                        expect(parsedMail.attachments[0].content.toString('binary')).to.equal(attachmentPayload);
+                        var attachmentBinStr = parsedMail.attachments[0].content.toString('binary');
+                        var attachmentPayload = utf8ToUInt8Array(attachmentBinStr);
+                        expect(attachmentPayload.length).to.equal(expectedAttachmentPayload.length);
+                        expect(attachmentPayload).to.deep.equal(expectedAttachmentPayload);
 
                         // var signatureArmored = parsedMail.attachments[1].content.toString('binary');
                         // var signatureMessage = openpgp.message.readArmored(signatureArmored);
@@ -227,8 +241,8 @@ define(function(require) {
     // Helper Functions
     //
 
-    function utf16ToUInt8Array(str) {
-        var bufView = new Uint16Array(new ArrayBuffer(str.length * 2));
+    function utf8ToUInt8Array(str) {
+        var bufView = new Uint8Array(new ArrayBuffer(str.length));
         for (var i = 0, strLen = str.length; i < strLen; i++) {
             bufView[i] = str.charCodeAt(i);
         }
