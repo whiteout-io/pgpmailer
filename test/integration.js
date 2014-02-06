@@ -167,9 +167,9 @@ define(function(require) {
                     subject: 'foobar',
                     body: 'hello, world!',
                     attachments: [{
-                        contentType: 'text/x-markdown',
-                        fileName: 'a.txt',
-                        uint8Array: expectedAttachmentPayload
+                        mimeType: 'text/x-markdown',
+                        filename: 'a.txt',
+                        content: expectedAttachmentPayload
                     }]
                 };
 

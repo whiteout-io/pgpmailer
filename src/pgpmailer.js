@@ -88,7 +88,7 @@ define(function(require) {
      * @param {Object} options.mail.bcc (optional) Array of objects with the ASCII string representing the recipient, see mail.to
      * @param {String} options.mail.subject String containing with the mail's subject
      * @param {String} options.mail.body Plain text body to be sent with the mail
-     * @param {Array} options.mail.attachments (optional) Array of attachment objects with fileName {String}, uint8Array {Uint8Array}, and contentType {String}
+     * @param {Array} options.mail.attachments (optional) Array of attachment objects with filename {String}, content {Uint8Array}, and mimeType {String}
      * @param {Object} options.cleartextMessage (optional) A clear text message in addition to the encrypted message
      * @param {Array} options.publicKeysArmored The public keys with which the message should be encrypted
      * @param {Function} callback(error) Indicates that the mail has been sent, or gives information in case an error occurred.
@@ -210,7 +210,7 @@ define(function(require) {
             mail.attachments.forEach(function(attmt) {
                 contentNode.createNode([{
                     key: 'Content-Type',
-                    value: attmt.contentType || 'application/octet-stream'
+                    value: attmt.mimeType || 'application/octet-stream'
                 }, {
                     key: 'Content-Transfer-Encoding',
                     value: 'base64'
@@ -218,9 +218,9 @@ define(function(require) {
                     key: 'Content-Disposition',
                     value: 'attachment',
                     parameters: {
-                        filename: attmt.fileName
+                        filename: attmt.filename
                     }
-                }]).content = attmt.uint8Array;
+                }]).content = attmt.content;
             });
         }
 

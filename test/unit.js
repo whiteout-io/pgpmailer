@@ -214,9 +214,9 @@ define(function(require) {
                     subject: 'foobar',
                     body: 'hello, world!',
                     attachments: [{
-                        contentType: 'text/plain',
-                        fileName: 'a.txt',
-                        uint8Array: utf16ToUInt8Array('attachment1')
+                        mimeType: 'text/plain',
+                        filename: 'a.txt',
+                        content: utf16ToUInt8Array('attachment1')
                     }]
                 };
 
@@ -272,7 +272,7 @@ define(function(require) {
 
                 contentNodeMock.createNode.withArgs([{
                     key: 'Content-Type',
-                    value: mail.attachments[0].contentType
+                    value: mail.attachments[0].mimeType
                 }, {
                     key: 'Content-Transfer-Encoding',
                     value: 'base64'
@@ -280,7 +280,7 @@ define(function(require) {
                     key: 'Content-Disposition',
                     value: 'attachment',
                     parameters: {
-                        filename: mail.attachments[0].fileName
+                        filename: mail.attachments[0].filename
                     }
                 }]).returns({});
 
@@ -447,9 +447,9 @@ define(function(require) {
                     subject: 'foobar',
                     body: 'hello, world!',
                     attachments: [{
-                        contentType: 'text/plain',
-                        fileName: 'a.txt',
-                        uint8Array: utf16ToUInt8Array('attachment1')
+                        mimeType: 'text/plain',
+                        filename: 'a.txt',
+                        content: utf16ToUInt8Array('attachment1')
                     }]
                 };
 
@@ -498,7 +498,7 @@ define(function(require) {
 
                 contentNodeMock.createNode.withArgs([{
                     key: 'Content-Type',
-                    value: mail.attachments[0].contentType
+                    value: mail.attachments[0].mimeType
                 }, {
                     key: 'Content-Transfer-Encoding',
                     value: 'base64'
@@ -506,7 +506,7 @@ define(function(require) {
                     key: 'Content-Disposition',
                     value: 'attachment',
                     parameters: {
-                        filename: mail.attachments[0].fileName
+                        filename: mail.attachments[0].filename
                     }
                 }]).returns({});
 
