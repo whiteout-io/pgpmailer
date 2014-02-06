@@ -32,7 +32,7 @@ define(function(require) {
             var opts, privKey;
 
             smtpMock = sinon.createStubInstance(SmtpContructorMock);
-            var connectStub = sinon.stub(simplesmtp, 'connect', function() {
+            var connectStub = sinon.stub(simplesmtp, 'createClient', function() {
                 return smtpMock;
             });
 
@@ -124,7 +124,7 @@ define(function(require) {
         });
 
         afterEach(function() {
-            simplesmtp.connect.restore();
+            simplesmtp.createClient.restore();
         });
 
         describe('send', function() {

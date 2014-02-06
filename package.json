@@ -1,23 +1,19 @@
 {
   "name": "pgpmailer",
   "author": "Whiteout Networks",
-  "maintainers": [
-    {
-      "name": "Felix Hammerl",
-      "email": "mail@felixhammerl.com"
-    }
-  ],
+  "maintainers": [{
+    "name": "Felix Hammerl",
+    "email": "mail@felixhammerl.com"
+  }],
   "repository": {
     "type": "git",
     "url": "http://github.com/whiteout-io/pgpmailer.git"
   },
   "version": "0.0.1",
-  "licenses": [
-    {
-      "type": "MIT",
-      "url": "http://github.com/whiteout-io/pgpmailer/blob/master/LICENSE"
-    }
-  ],
+  "licenses": [{
+    "type": "MIT",
+    "url": "http://github.com/whiteout-io/pgpmailer/blob/master/LICENSE"
+  }],
   "engines": {
     "node": ">=0.8"
   },

@@ -29,7 +29,7 @@ define(function(require) {
         this._current = undefined;
 
         this._pgp = pgp || openpgp;
-        this._smtp = (smtp || simplesmtp).connect(options.port, options.host, options);
+        this._smtp = (smtp || simplesmtp).createClient(options.port, options.host, options);
 
         var ready = function() {
             this._smtp.removeAllListeners('message');
@@ -43,6 +43,16 @@ define(function(require) {
         this._smtp.on('idle', ready.bind(this));
         this._smtp.on('error', options.onError);
     };
+
+    PgpMailer.prototype.login = function() {
+        this._smtp.connect();
+    };
+
+    PgpMailer.prototype.logout = function(callback) {
+        this._smtp.quit();
+        this._smtp.once('end', callback);
+    };
+
 
     /**
      * Set the private key used to sign your messages
@@ -346,11 +356,6 @@ define(function(require) {
         }.bind(this));
 
         this._smtp.useEnvelope(builder.getEnvelope());
-    };
-
-    PgpMailer.prototype.stop = function(callback) {
-        this._smtp.once('end', callback);
-        this._smtp.quit();
     };
 
     return PgpMailer;

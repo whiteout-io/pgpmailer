@@ -18,12 +18,13 @@ define(function(require) {
     chai.Assertion.includeStack = true;
 
     var SmtpContructorMock = function() {};
+    SmtpContructorMock.prototype.connect = function() {};
+    SmtpContructorMock.prototype.quit = function() {};
     SmtpContructorMock.prototype.on = function() {};
     SmtpContructorMock.prototype.once = function() {};
     SmtpContructorMock.prototype.removeAllListeners = function() {};
     SmtpContructorMock.prototype.useEnvelope = function() {};
     SmtpContructorMock.prototype.end = function() {};
-    SmtpContructorMock.prototype.quite = function() {};
 
     describe('unit tests', function() {
         var mailer, smtpMock, ready, builderMock,
@@ -43,7 +44,7 @@ define(function(require) {
             builderMock.node = rootNodeMock;
 
             smtpMock = sinon.createStubInstance(SmtpContructorMock);
-            var connectStub = sinon.stub(simplesmtp, 'connect', function() {
+            var createClientStub = sinon.stub(simplesmtp, 'createClient', function() {
                 return smtpMock;
             });
 
@@ -65,14 +66,36 @@ define(function(require) {
             mailer = new PgpMailer(opts, openpgp, simplesmtp);
             mailer._privateKey = 'asdasdasdasd';
 
-            expect(connectStub.calledOnce).to.be.true;
-            expect(connectStub.calledWith(opts.port, opts.host, opts)).to.be.true;
+            expect(createClientStub.calledOnce).to.be.true;
+            expect(createClientStub.calledWith(opts.port, opts.host, opts)).to.be.true;
             expect(smtpMock.on.calledWith('idle')).to.be.true;
             expect(smtpMock.on.calledWith('error')).to.be.true;
         });
 
         afterEach(function() {
-            simplesmtp.connect.restore();
+            simplesmtp.createClient.restore();
+        });
+
+        describe('login', function() {
+            it('should work', function() {
+                smtpMock.connect.returns();
+
+                mailer.login();
+
+                expect(smtpMock.connect.calledOnce).to.be.true;
+            });
+        });
+
+        describe('logout', function() {
+            it('should work', function(done) {
+                smtpMock.quit.returns();
+                smtpMock.once.yields();
+
+                mailer.logout(done);
+
+                expect(smtpMock.quit.calledOnce).to.be.true;
+                expect(smtpMock.once.calledOnce).to.be.true;
+            });
         });
 
         describe('set private key', function() {
