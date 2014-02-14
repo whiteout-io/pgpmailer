@@ -29,6 +29,11 @@ define(function(require) {
         this._current = undefined;
 
         this._pgp = pgp || openpgp;
+        // set pgp worker path for in browser use
+        if (typeof window !== 'undefined' && window.Worker && options.pgpWorkerPath) {
+            openpgp.initWorker(options.pgpWorkerPath);
+        }
+
         this._smtp = (smtp || simplesmtp).createClient(options.port, options.host, options);
 
         var ready = function() {
@@ -112,25 +117,44 @@ define(function(require) {
     };
 
     PgpMailer.prototype._processQueue = function() {
-        if (this._busy || this._queue.length === 0) {
+        var callback,
+            self = this;
+
+        if (self._busy || self._queue.length === 0) {
             return;
         }
 
-        this._current = this._queue.shift();
+        self._current = self._queue.shift();
+        callback = self._current.callback;
 
-        this._createMimeTree();
-        if (this._current.encrypt) {
-            // if necessary, encrypt the message!
-            this._encrypt();
-        }
-        this._send();
+        self._createMimeTree(function(err) {
+            if (err) {
+                callback(err);
+                return;
+            }
+
+            if (self._current.encrypt) {
+                // if necessary, encrypt the message!
+                self._encrypt(function(err) {
+                    if (err) {
+                        callback(err);
+                        return;
+                    }
+
+                    self._send();
+                });
+                return;
+            }
+            self._send();
+        });
     };
 
-    PgpMailer.prototype._createMimeTree = function() {
-        var mail = this._current.mail,
-            builder = this._current.builder,
+    PgpMailer.prototype._createMimeTree = function(localCallback) {
+        var self = this,
+            mail = self._current.mail,
+            builder = self._current.builder,
             parentNode, contentNode, signatureNode,
-            cleartext, signedCleartext, signatureHeader;
+            cleartext, signatureHeader;
 
 
         // 
@@ -238,18 +262,28 @@ define(function(require) {
 
         cleartext = contentNode.build().trim() + '\r\n';
         openpgp.config.prefer_hash_algorithm = openpgp.enums.hash.sha256;
-        signedCleartext = openpgp.signClearMessage([this._privateKey], cleartext);
-        signatureHeader = "-----BEGIN PGP SIGNATURE-----";
-        signatureNode.content = signatureHeader + signedCleartext.split(signatureHeader).pop();
+        openpgp.signClearMessage([self._privateKey], cleartext, onSigned);
+
+        function onSigned(err, signedCleartext) {
+            if (err) {
+                localCallback(err);
+                return;
+            }
+
+            signatureHeader = "-----BEGIN PGP SIGNATURE-----";
+            signatureNode.content = signatureHeader + signedCleartext.split(signatureHeader).pop();
+
+            localCallback();
+        }
     };
 
-    PgpMailer.prototype._encrypt = function() {
-        var builder = this._current.builder,
-            callback = this._current.callback,
-            cleartextMessage = this._current.cleartextMessage,
-            publicKeysArmored = this._current.publicKeysArmored,
+    PgpMailer.prototype._encrypt = function(localCallback) {
+        var self = this,
+            builder = self._current.builder,
+            cleartextMessage = self._current.cleartextMessage,
+            publicKeysArmored = self._current.publicKeysArmored,
             publicKeys = [],
-            plaintext, ciphertext,
+            plaintext,
             multipartParentNode, encryptedNode;
 
         // prepare the plain text mime nodes
@@ -260,102 +294,112 @@ define(function(require) {
             publicKeysArmored.forEach(function(key) {
                 publicKeys.push(openpgp.key.readArmored(key).keys[0]);
             });
-
-            // encrypt the plain text
-            ciphertext = openpgp.signAndEncryptMessage(publicKeys, this._privateKey, plaintext);
         } catch (err) {
-            callback(err);
+            localCallback(err);
             return;
         }
 
-        // delete the plain text from the builder
-        delete builder.node;
+        // encrypt the plain text
+        openpgp.signAndEncryptMessage(publicKeys, self._privateKey, plaintext, onEncrypted);
 
-        // do we need to frame the encrypted message with a clear text?
-        if (cleartextMessage) {
-            // create a multipart/mixed message
-            multipartParentNode = builder.createNode([{
-                key: 'Content-Type',
-                value: 'multipart/mixed',
-            }]);
+        function onEncrypted(err, ciphertext) {
+            if (err) {
+                localCallback(err);
+                return;
+            }
 
-            multipartParentNode.createNode([{
+            // delete the plain text from the builder
+            delete builder.node;
+
+            // do we need to frame the encrypted message with a clear text?
+            if (cleartextMessage) {
+                // create a multipart/mixed message
+                multipartParentNode = builder.createNode([{
+                    key: 'Content-Type',
+                    value: 'multipart/mixed',
+                }]);
+
+                multipartParentNode.createNode([{
+                    key: 'Content-Type',
+                    value: 'text/plain',
+                    parameters: {
+                        charset: 'utf-8'
+                    }
+                }, {
+                    key: 'Content-Transfer-Encoding',
+                    value: 'quoted-printable'
+                }]).content = cleartextMessage;
+            }
+
+            // create a pgp/mime message
+            // either pin the encrypted mime-subtree under the multipart/mixed node, OR 
+            // create a top-level multipart/encrypted node
+            encryptedNode = (multipartParentNode || builder).createNode([{
                 key: 'Content-Type',
-                value: 'text/plain',
+                value: 'multipart/encrypted',
                 parameters: {
-                    charset: 'utf-8'
+                    protocol: 'application/pgp-encrypted'
                 }
             }, {
                 key: 'Content-Transfer-Encoding',
-                value: 'quoted-printable'
-            }]).content = cleartextMessage;
+                value: '7bit'
+            }, {
+                key: 'Content-Description',
+                value: 'OpenPGP encrypted message'
+            }]);
+            encryptedNode.content = 'This is an OpenPGP/MIME encrypted message.';
+
+            // set the version info
+            encryptedNode.createNode([{
+                key: 'Content-Type',
+                value: 'application/pgp-encrypted'
+            }, {
+                key: 'Content-Transfer-Encoding',
+                value: '7bit'
+            }, {
+                key: 'Content-Description',
+                value: 'PGP/MIME Versions Identification'
+            }]).content = 'Version: 1';
+
+            // set the ciphertext
+            encryptedNode.createNode([{
+                key: 'Content-Type',
+                value: 'application/octet-stream'
+            }, {
+                key: 'Content-Transfer-Encoding',
+                value: '7bit'
+            }, {
+                key: 'Content-Description',
+                value: 'OpenPGP encrypted message'
+            }, {
+                key: 'Content-Disposition',
+                value: 'inline',
+                parameters: {
+                    filename: 'encrypted.asc'
+                }
+            }]).content = ciphertext;
+
+            localCallback();
         }
-
-        // create a pgp/mime message
-        // either pin the encrypted mime-subtree under the multipart/mixed node, OR 
-        // create a top-level multipart/encrypted node
-        encryptedNode = (multipartParentNode || builder).createNode([{
-            key: 'Content-Type',
-            value: 'multipart/encrypted',
-            parameters: {
-                protocol: 'application/pgp-encrypted'
-            }
-        }, {
-            key: 'Content-Transfer-Encoding',
-            value: '7bit'
-        }, {
-            key: 'Content-Description',
-            value: 'OpenPGP encrypted message'
-        }]);
-        encryptedNode.content = 'This is an OpenPGP/MIME encrypted message.';
-
-        // set the version info
-        encryptedNode.createNode([{
-            key: 'Content-Type',
-            value: 'application/pgp-encrypted'
-        }, {
-            key: 'Content-Transfer-Encoding',
-            value: '7bit'
-        }, {
-            key: 'Content-Description',
-            value: 'PGP/MIME Versions Identification'
-        }]).content = 'Version: 1';
-
-        // set the ciphertext
-        encryptedNode.createNode([{
-            key: 'Content-Type',
-            value: 'application/octet-stream'
-        }, {
-            key: 'Content-Transfer-Encoding',
-            value: '7bit'
-        }, {
-            key: 'Content-Description',
-            value: 'OpenPGP encrypted message'
-        }, {
-            key: 'Content-Disposition',
-            value: 'inline',
-            parameters: {
-                filename: 'encrypted.asc'
-            }
-        }]).content = ciphertext;
     };
 
     PgpMailer.prototype._send = function() {
-        var builder = this._current.builder,
-            callback = this._current.callback;
+        var self = this,
+            builder = self._current.builder,
+            callback = self._current.callback;
 
-        this._smtp.on('message', function() {
-            this._smtp.end(builder.build());
-        }.bind(this));
+        self._smtp.on('message', function() {
+            self._smtp.end(builder.build());
+        });
 
-        this._smtp.on('rcptFailed', callback);
+        self._smtp.on('rcptFailed', callback);
 
-        this._smtp.on('ready', function() {
-            this._current = false;
+        self._smtp.on('ready', function() {
+            self._current = false;
             callback();
-        }.bind(this));
+        });
 
-        this._smtp.useEnvelope(builder.getEnvelope());
+        self._smtp.useEnvelope(builder.getEnvelope());
     };
 
     return PgpMailer;

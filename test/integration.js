@@ -48,7 +48,8 @@ define(function(require) {
                 secureConnection: true,
                 tls: {
                     ca: ['trusty cert']
-                }
+                },
+                pgpWorkerPath: 'lib/openpgp.worker.js'
             };
 
             privKey = '-----BEGIN PGP PRIVATE KEY BLOCK-----\r\n' +

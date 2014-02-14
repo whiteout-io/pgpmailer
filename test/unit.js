@@ -183,17 +183,13 @@ define(function(require) {
         });
 
         describe('send', function() {
-            it('should send an encrypted signed message with attachments', function() {
+            it('should send an encrypted signed message with attachments', function(done) {
                 var cb, mail, mockCiphertext, mockPlaintext, mockCompiledMail, mockSignature,
                     readArmoredStub, signAndEncryptStub, signClearStub, publicKeysArmored;
 
                 //
                 // Setup Fixture
                 //
-
-                cb = function(err) {
-                    expect(err).to.not.exist;
-                };
 
                 publicKeysArmored = ['publicA', 'publicB', 'publicC', 'publicD', 'publicE'];
                 mail = {
@@ -230,9 +226,9 @@ define(function(require) {
                     keys: [{}]
                 });
                 signAndEncryptStub = sinon.stub(openpgp, 'signAndEncryptMessage');
-                signAndEncryptStub.returns(mockCiphertext);
+                signAndEncryptStub.yields(null, mockCiphertext);
                 signClearStub = sinon.stub(openpgp, 'signClearMessage');
-                signClearStub.withArgs([mailer._privateKey], mockPlaintext.trim() + '\r\n').returns(mockSignature);
+                signClearStub.withArgs([mailer._privateKey], mockPlaintext.trim() + '\r\n').yields(null, mockSignature);
 
                 contentNodeMock.build.returns(mockPlaintext);
                 builderMock.build.returns(mockCompiledMail);
@@ -343,10 +339,66 @@ define(function(require) {
                 }]).returns({});
 
                 smtpMock.on.withArgs('message').yields();
+                smtpMock.on.withArgs('ready').yieldsAsync();
 
                 //
                 // Prepare SUT
                 //
+
+                cb = function(err) {
+                    expect(err).to.not.exist;
+
+                    //
+                    // Verification
+                    //
+
+                    // check the envelope setting
+                    expect(builderMock.setSubject.calledOnce).to.be.true;
+                    expect(builderMock.setFrom.calledOnce).to.be.true;
+                    expect(builderMock.addTo.calledTwice).to.be.true;
+                    expect(builderMock.addCc.calledOnce).to.be.true;
+                    expect(builderMock.addBcc.calledOnce).to.be.true;
+                    expect(builderMock.setSubject.calledWith(mail.subject)).to.be.true;
+                    expect(builderMock.setFrom.calledWith(mail.from[0].address)).to.be.true;
+                    expect(builderMock.addTo.calledWith(mail.to[0].address)).to.be.true;
+                    expect(builderMock.addTo.calledWith(mail.to[1].address)).to.be.true;
+                    expect(builderMock.addCc.calledWith(mail.cc[0].address)).to.be.true;
+                    expect(builderMock.addBcc.calledWith(mail.bcc[0].address)).to.be.true;
+
+                    // check that the smtp client was called with the right stuff
+                    expect(smtpMock.useEnvelope.calledOnce).to.be.true;
+                    expect(smtpMock.end.calledOnce).to.be.true;
+                    expect(smtpMock.useEnvelope.calledWith({})).to.be.true;
+                    expect(smtpMock.end.calledWith(mockCompiledMail)).to.be.true;
+
+                    // check the registered event handlers on the smtp client
+                    expect(smtpMock.on.calledWith('message')).to.be.true;
+                    expect(smtpMock.on.calledWith('rcptFailed')).to.be.true;
+                    expect(smtpMock.on.calledWith('ready')).to.be.true;
+
+                    // check that the mailbuilder has built a clear text and a pgp mail and compiled the pgp mail
+                    expect(builderMock.build.calledOnce).to.be.true;
+                    expect(builderMock.createNode.callCount).to.equal(2);
+                    expect(rootNodeMock.createNode.calledTwice).to.be.true;
+                    expect(contentNodeMock.createNode.calledTwice).to.be.true;
+                    expect(encryptedRootMock.createNode.calledTwice).to.be.true;
+                    expect(multipartRootMock.createNode.calledTwice).to.be.true;
+
+                    // check that the pgp lib was called
+                    expect(signClearStub.calledOnce).to.be.true;
+                    expect(readArmoredStub.callCount).to.equal(publicKeysArmored.length);
+                    publicKeysArmored.forEach(function(armored) {
+                        expect(readArmoredStub.calledWith(armored)).to.be.true;
+                    });
+                    expect(signAndEncryptStub.calledOnce).to.be.true;
+
+                    // restore stubs
+                    openpgp.key.readArmored.restore();
+                    openpgp.signAndEncryptMessage.restore();
+                    openpgp.signClearMessage.restore();
+
+                    done();
+                };
 
                 // queue the mail
                 mailer.send({
@@ -365,56 +417,6 @@ define(function(require) {
                 //
 
                 ready(); // and ... weeeeeeee
-
-
-                //
-                // Verification
-                //
-
-                // check the envelope setting
-                expect(builderMock.setSubject.calledOnce).to.be.true;
-                expect(builderMock.setFrom.calledOnce).to.be.true;
-                expect(builderMock.addTo.calledTwice).to.be.true;
-                expect(builderMock.addCc.calledOnce).to.be.true;
-                expect(builderMock.addBcc.calledOnce).to.be.true;
-                expect(builderMock.setSubject.calledWith(mail.subject)).to.be.true;
-                expect(builderMock.setFrom.calledWith(mail.from[0].address)).to.be.true;
-                expect(builderMock.addTo.calledWith(mail.to[0].address)).to.be.true;
-                expect(builderMock.addTo.calledWith(mail.to[1].address)).to.be.true;
-                expect(builderMock.addCc.calledWith(mail.cc[0].address)).to.be.true;
-                expect(builderMock.addBcc.calledWith(mail.bcc[0].address)).to.be.true;
-
-                // check that the smtp client was called with the right stuff
-                expect(smtpMock.useEnvelope.calledOnce).to.be.true;
-                expect(smtpMock.end.calledOnce).to.be.true;
-                expect(smtpMock.useEnvelope.calledWith({})).to.be.true;
-                expect(smtpMock.end.calledWith(mockCompiledMail)).to.be.true;
-
-                // check the registered event handlers on the smtp client
-                expect(smtpMock.on.calledWith('message')).to.be.true;
-                expect(smtpMock.on.calledWith('rcptFailed')).to.be.true;
-                expect(smtpMock.on.calledWith('ready')).to.be.true;
-
-                // check that the mailbuilder has built a clear text and a pgp mail and compiled the pgp mail
-                expect(builderMock.build.calledOnce).to.be.true;
-                expect(builderMock.createNode.callCount).to.equal(2);
-                expect(rootNodeMock.createNode.calledTwice).to.be.true;
-                expect(contentNodeMock.createNode.calledTwice).to.be.true;
-                expect(encryptedRootMock.createNode.calledTwice).to.be.true;
-                expect(multipartRootMock.createNode.calledTwice).to.be.true;
-
-                // check that the pgp lib was called
-                expect(signClearStub.calledOnce).to.be.true;
-                expect(readArmoredStub.callCount).to.equal(publicKeysArmored.length);
-                publicKeysArmored.forEach(function(armored) {
-                    expect(readArmoredStub.calledWith(armored)).to.be.true;
-                });
-                expect(signAndEncryptStub.calledOnce).to.be.true;
-
-                // restore stubs
-                openpgp.key.readArmored.restore();
-                openpgp.signAndEncryptMessage.restore();
-                openpgp.signClearMessage.restore();
             });
 
             it('should send a signed message in the clear', function() {
@@ -458,7 +460,7 @@ define(function(require) {
                 mockSignature = '-----BEGIN PGP SIGNATURE-----UMBAPALLUMBA-----END PGP SIGNATURE-----';
 
                 signClearStub = sinon.stub(openpgp, 'signClearMessage');
-                signClearStub.withArgs([mailer._privateKey], mockPlaintext.trim() + '\r\n').returns(mockSignature);
+                signClearStub.withArgs([mailer._privateKey], mockPlaintext.trim() + '\r\n').yields(null, mockSignature);
 
                 contentNodeMock.build.returns(mockPlaintext);
                 builderMock.build.returns(mockCompiledMail);
@@ -511,6 +513,7 @@ define(function(require) {
                 }]).returns({});
 
                 smtpMock.on.withArgs('message').yields();
+                smtpMock.on.withArgs('ready').yieldsAsync();
 
                 //
                 // Prepare SUT
