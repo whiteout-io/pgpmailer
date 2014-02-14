@@ -40,7 +40,7 @@ require.config({
         'simplesmtp-client': '../node_modules/simplesmtp/src/simplesmtp-client',
         'simplesmtp-pool': '../node_modules/simplesmtp/src/simplesmtp-pool',
         'xoauth2': '../node_modules/simplesmtp/node_modules/xoauth2/src/xoauth2',
-        'openpgp': 'lib/openpgp.min',
+        'openpgp': 'lib/openpgp',
         'crypto': 'lib/dummy',
         'node-forge': '../node_modules/mailbuilder/node_modules/mimelib/node_modules/node-shims/node_modules/node-forge/js/forge',
         'aes': '../node_modules/mailbuilder/node_modules/mimelib/node_modules/node-shims/node_modules/node-forge/js/aes',

@@ -48,9 +48,11 @@ define(function(require) {
                 secureConnection: true,
                 tls: {
                     ca: ['trusty cert']
-                },
-                pgpWorkerPath: 'lib/openpgp.worker.js'
+                }
+                /*,
+                pgpWorkerPath: 'lib/openpgp.worker.js'*/
             };
+            window.Worker = undefined;
 
             privKey = '-----BEGIN PGP PRIVATE KEY BLOCK-----\r\n' +
                 'Version: OpenPGP.js v.1.20131116\r\n' +
@@ -130,7 +132,7 @@ define(function(require) {
 
         describe('send', function() {
             it('should send a message with attachments and decode the output correctly', function(done) {
-                this.timeout(10000);
+                this.timeout(1000000);
 
                 var cb, mail, publicKeysArmored, expectedAttachmentPayload, cleartextMessage;
 
@@ -145,7 +147,7 @@ define(function(require) {
                 cleartextMessage = 'yes! this is very secure!';
                 publicKeysArmored = [pubkeyArmored];
 
-                var size = 10000;
+                var size = 1024;
                 if (typeof window !== 'undefined' && window.crypto && window.crypto.getRandomValues) {
                     var arr = new Uint8Array(size);
                     window.crypto.getRandomValues(arr);
@@ -155,6 +157,15 @@ define(function(require) {
                     var randomBinStr = require('crypto').randomBytes(size).toString('binary');
                     expectedAttachmentPayload = utf8ToUInt8Array(randomBinStr);
                 }
+
+                var bigSize = size * 1024 * 1;
+                var bigBuf = new Uint8Array(bigSize);
+                for (var i = 0; i < bigSize; i += size) {
+                    for (var j = 0; j < size; j++) {
+                        bigBuf[i + j] = expectedAttachmentPayload[j];
+                    }
+                }
+                expectedAttachmentPayload = bigBuf;
 
                 mail = {
                     from: [{
@@ -176,6 +187,7 @@ define(function(require) {
 
                 smtpMock.on.withArgs('message').yields();
                 smtpMock.end.withArgs(sinon.match(function(args) {
+
                     var sentRFCMessage = args;
 
                     expect(sentRFCMessage).to.contain(cleartextMessage);
@@ -188,12 +200,15 @@ define(function(require) {
                     var publicKeyObj = openpgp.key.readArmored(pubkeyArmored).keys[0];
 
                     var decrypted = openpgp.decryptAndVerifyMessage(mailer._privateKey, [publicKeyObj], pgpMessageObj);
+
                     expect(decrypted).to.exist;
                     expect(decrypted.signatures[0].valid).to.be.true;
                     expect(decrypted.text).to.exist;
 
                     var parser = new MailParser();
                     parser.on('end', function(parsedMail) {
+                        console.profileEnd();
+
                         expect(parsedMail).to.exist;
                         expect(parsedMail.text.replace(/\n/g, '')).to.equal(mail.body);
                         var attachmentBinStr = parsedMail.attachments[0].content.toString('binary');
@@ -216,6 +231,9 @@ define(function(require) {
                 //
                 // Prepare SUT
                 //
+
+                 
+                console.profile("PGP Mailer Profile");
 
                 // queue the mail
                 mailer.send({
