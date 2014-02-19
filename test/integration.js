@@ -121,17 +121,17 @@ define(function(require) {
                     cleartextMessage: cleartextMessage
                 }, function(err) {
                     expect(err).to.not.exist;
-                });
 
-                mailer.send({
-                    mail: mail,
-                    encrypt: true,
-                    publicKeysArmored: publicKeysArmored,
-                    cleartextMessage: cleartextMessage
-                }, function(err) {
-                    expect(err).to.not.exist;
+                    mailer.send({
+                        mail: mail,
+                        encrypt: true,
+                        publicKeysArmored: publicKeysArmored,
+                        cleartextMessage: cleartextMessage
+                    }, function(err) {
+                        expect(err).to.not.exist;
 
-                    done();
+                        done();
+                    });
                 });
             }
 

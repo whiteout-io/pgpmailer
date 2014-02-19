@@ -98,6 +98,8 @@ define(function(require) {
             return;
         }
 
+        self._busy = true;
+
         currentBuildData = self._queue.shift();
         self._pgpbuilder.build(currentBuildData.buildOptions, onBuildFinished);
 
