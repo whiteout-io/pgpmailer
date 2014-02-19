@@ -7,52 +7,17 @@ if (typeof module === 'object' && typeof define !== 'function') {
 }
 
 define(function(require) {
-    var sinon = require('sinon'),
+    var PgpMailer = require('../src/pgpmailer'),
         chai = require('chai'),
-        expect = chai.expect,
-        PgpMailer = require('../src/pgpmailer'),
-        simplesmtp = require('simplesmtp'),
-        openpgp = require('openpgp'),
-        MailParser = require('mailparser').MailParser;
+        expect = chai.expect;
 
     chai.Assertion.includeStack = true;
 
-    var SmtpContructorMock = function() {};
-    SmtpContructorMock.prototype.on = function() {};
-    SmtpContructorMock.prototype.once = function() {};
-    SmtpContructorMock.prototype.removeAllListeners = function() {};
-    SmtpContructorMock.prototype.useEnvelope = function() {};
-    SmtpContructorMock.prototype.end = function() {};
-    SmtpContructorMock.prototype.quite = function() {};
+    describe('send', function() {
+        it('should work', function(done) {
+            this.timeout(60000);
 
-    describe('integration tests', function() {
-        var mailer, smtpMock, ready, pubkeyArmored;
-
-        beforeEach(function(done) {
-            var opts, privKey;
-
-            smtpMock = sinon.createStubInstance(SmtpContructorMock);
-            var connectStub = sinon.stub(simplesmtp, 'createClient', function() {
-                return smtpMock;
-            });
-
-            // workaround to get a hold on the callback function that triggers the next mail to be sent
-            smtpMock.on.withArgs('idle', sinon.match(function(cb) {
-                ready = cb;
-            }));
-
-            opts = {
-                host: 'hello.world.com',
-                port: 1337,
-                auth: {},
-                secureConnection: true,
-                tls: {
-                    ca: ['trusty cert']
-                },
-                pgpWorkerPath: 'lib/openpgp.worker.js'
-            };
-
-            privKey = '-----BEGIN PGP PRIVATE KEY BLOCK-----\r\n' +
+            var privKeyArmored = '-----BEGIN PGP PRIVATE KEY BLOCK-----\r\n' +
                 'Version: OpenPGP.js v.1.20131116\r\n' +
                 'Comment: Whiteout Mail - http://whiteout.io\r\n' +
                 '\r\n' +
@@ -88,7 +53,7 @@ define(function(require) {
                 '=wxuK\r\n' +
                 '-----END PGP PRIVATE KEY BLOCK-----';
 
-            pubkeyArmored = '-----BEGIN PGP PUBLIC KEY BLOCK-----\r\n' +
+            var pubkeyArmored = '-----BEGIN PGP PUBLIC KEY BLOCK-----\r\n' +
                 'Version: OpenPGP.js v.1.20131116\r\n' +
                 'Comment: Whiteout Mail - http://whiteout.io\r\n' +
                 '\r\n' +
@@ -109,141 +74,76 @@ define(function(require) {
                 '=7Wpe\r\n' +
                 '-----END PGP PUBLIC KEY BLOCK-----';
 
-            mailer = new PgpMailer(opts, openpgp, simplesmtp);
+            var mailer = new PgpMailer({
+                host: 'smtp.gmail.com',
+                port: 465,
+                auth: {
+                    user: 'safewithme.testuser',
+                    pass: 'hellosafe'
+                },
+                secureConnection: true,
+                tls: {
+                    ca: ['-----BEGIN CERTIFICATE-----\nMIIEBDCCAuygAwIBAgIDAjppMA0GCSqGSIb3DQEBBQUAMEIxCzAJBgNVBAYTAlVT\nMRYwFAYDVQQKEw1HZW9UcnVzdCBJbmMuMRswGQYDVQQDExJHZW9UcnVzdCBHbG9i\nYWwgQ0EwHhcNMTMwNDA1MTUxNTU1WhcNMTUwNDA0MTUxNTU1WjBJMQswCQYDVQQG\nEwJVUzETMBEGA1UEChMKR29vZ2xlIEluYzElMCMGA1UEAxMcR29vZ2xlIEludGVy\nbmV0IEF1dGhvcml0eSBHMjCCASIwDQYJKoZIhvcNAQEBBQADggEPADCCAQoCggEB\nAJwqBHdc2FCROgajguDYUEi8iT/xGXAaiEZ+4I/F8YnOIe5a/mENtzJEiaB0C1NP\nVaTOgmKV7utZX8bhBYASxF6UP7xbSDj0U/ck5vuR6RXEz/RTDfRK/J9U3n2+oGtv\nh8DQUB8oMANA2ghzUWx//zo8pzcGjr1LEQTrfSTe5vn8MXH7lNVg8y5Kr0LSy+rE\nahqyzFPdFUuLH8gZYR/Nnag+YyuENWllhMgZxUYi+FOVvuOAShDGKuy6lyARxzmZ\nEASg8GF6lSWMTlJ14rbtCMoU/M4iarNOz0YDl5cDfsCx3nuvRTPPuj5xt970JSXC\nDTWJnZ37DhF5iR43xa+OcmkCAwEAAaOB+zCB+DAfBgNVHSMEGDAWgBTAephojYn7\nqwVkDBF9qn1luMrMTjAdBgNVHQ4EFgQUSt0GFhu89mi1dvWBtrtiGrpagS8wEgYD\nVR0TAQH/BAgwBgEB/wIBADAOBgNVHQ8BAf8EBAMCAQYwOgYDVR0fBDMwMTAvoC2g\nK4YpaHR0cDovL2NybC5nZW90cnVzdC5jb20vY3Jscy9ndGdsb2JhbC5jcmwwPQYI\nKwYBBQUHAQEEMTAvMC0GCCsGAQUFBzABhiFodHRwOi8vZ3RnbG9iYWwtb2NzcC5n\nZW90cnVzdC5jb20wFwYDVR0gBBAwDjAMBgorBgEEAdZ5AgUBMA0GCSqGSIb3DQEB\nBQUAA4IBAQA21waAESetKhSbOHezI6B1WLuxfoNCunLaHtiONgaX4PCVOzf9G0JY\n/iLIa704XtE7JW4S615ndkZAkNoUyHgN7ZVm2o6Gb4ChulYylYbc3GrKBIxbf/a/\nzG+FA1jDaFETzf3I93k9mTXwVqO94FntT0QJo544evZG0R0SnU++0ED8Vf4GXjza\nHFa9llF7b1cq26KqltyMdMKVvvBulRP/F/A8rLIQjcxz++iPAsbw+zOzlTvjwsto\nWHPbqCRiOwY1nQ2pM714A5AuTHhdUDqB1O6gyHA43LL5Z/qHQF1hwFGPa4NrzQU6\nyuGnBXj8ytqU0CwIPX4WecigUCAkVDNx\n-----END CERTIFICATE-----']
+                },
+                onError: function(error) {
+                    console.error(error);
+                }
+            });
+
+            var publicKeysArmored = [pubkeyArmored];
+            var mail = {
+                from: ['safewithme.testuser@gmail.com'],
+                to: ['safewithme.testuser@gmail.com'],
+                subject: 'hello, pgp',
+                body: 'hello, world!',
+                attachments: [{
+                    contentType: 'text/plain',
+                    fileName: 'foobar.txt',
+                    uint8Array: utf16ToUInt8Array('I AM THE MIGHTY ATTACHMENT!')
+                }]
+            };
+            var cleartextMessage = 'This message is prepended to your encrypted message and displayed in the clear even if your recipient does not speak PGP!';
 
             mailer.setPrivateKey({
-                privateKeyArmored: privKey,
+                privateKeyArmored: privKeyArmored,
                 passphrase: 'passphrase'
             }, function(err) {
                 expect(err).to.not.exist;
-                expect(connectStub.calledOnce).to.be.true;
-                expect(connectStub.calledWith(opts.port, opts.host, opts)).to.be.true;
-                expect(smtpMock.on.calledWith('idle')).to.be.true;
-                expect(smtpMock.on.calledWith('error')).to.be.true;
-                done();
+
+                send();
             });
-        });
 
-        afterEach(function() {
-            simplesmtp.createClient.restore();
-        });
-
-        describe('send', function() {
-            it('should send a message with attachments and decode the output correctly', function(done) {
-                this.timeout(10000);
-
-                var cb, mail, publicKeysArmored, expectedAttachmentPayload, cleartextMessage;
-
-                //
-                // Setup Fixture
-                //
-
-                cb = function(err) {
-                    expect(err).to.not.exist;
-                };
-
-                cleartextMessage = 'yes! this is very secure!';
-                publicKeysArmored = [pubkeyArmored];
-
-                var size = 10000;
-                if (typeof window !== 'undefined' && window.crypto && window.crypto.getRandomValues) {
-                    var arr = new Uint8Array(size);
-                    window.crypto.getRandomValues(arr);
-                    expectedAttachmentPayload = arr;
-                } else {
-                    // node.js
-                    var randomBinStr = require('crypto').randomBytes(size).toString('binary');
-                    expectedAttachmentPayload = utf8ToUInt8Array(randomBinStr);
-                }
-
-                mail = {
-                    from: [{
-                        address: 'a@a.io'
-                    }],
-                    to: [{
-                        address: 'b@b.io'
-                    }, {
-                        address: 'c@c.io'
-                    }],
-                    subject: 'foobar',
-                    body: 'hello, world!',
-                    attachments: [{
-                        mimeType: 'text/x-markdown',
-                        filename: 'a.txt',
-                        content: expectedAttachmentPayload
-                    }]
-                };
-
-                smtpMock.on.withArgs('message').yields();
-                smtpMock.end.withArgs(sinon.match(function(args) {
-                    var sentRFCMessage = args;
-
-                    expect(sentRFCMessage).to.contain(cleartextMessage);
-
-                    var pgpPrefix = '-----BEGIN PGP MESSAGE-----';
-                    var pgpSuffix = '-----END PGP MESSAGE-----';
-                    var pgpMessage = pgpPrefix + sentRFCMessage.split(pgpPrefix).pop().split(pgpSuffix).shift() + pgpSuffix;
-
-                    var pgpMessageObj = openpgp.message.readArmored(pgpMessage);
-                    var publicKeyObj = openpgp.key.readArmored(pubkeyArmored).keys[0];
-
-                    var decrypted = openpgp.decryptAndVerifyMessage(mailer._privateKey, [publicKeyObj], pgpMessageObj);
-                    expect(decrypted).to.exist;
-                    expect(decrypted.signatures[0].valid).to.be.true;
-                    expect(decrypted.text).to.exist;
-
-                    var parser = new MailParser();
-                    parser.on('end', function(parsedMail) {
-                        expect(parsedMail).to.exist;
-                        expect(parsedMail.text.replace(/\n/g, '')).to.equal(mail.body);
-                        var attachmentBinStr = parsedMail.attachments[0].content.toString('binary');
-                        var attachmentPayload = utf8ToUInt8Array(attachmentBinStr);
-                        expect(attachmentPayload.length).to.equal(expectedAttachmentPayload.length);
-                        expect(attachmentPayload).to.deep.equal(expectedAttachmentPayload);
-
-                        // var signatureArmored = parsedMail.attachments[1].content.toString('binary');
-                        // var signatureMessage = openpgp.message.readArmored(signatureArmored);
-
-                        // TODO verify application/pgp signature
-
-                        done();
-                    });
-                    parser.end(decrypted.text);
-
-                    return true;
-                }));
-
-                //
-                // Prepare SUT
-                //
-
-                // queue the mail
+            function send() {
                 mailer.send({
                     mail: mail,
                     encrypt: true,
                     publicKeysArmored: publicKeysArmored,
                     cleartextMessage: cleartextMessage
-                }, cb);
+                }, function(err) {
+                    expect(err).to.not.exist;
+                });
 
-                // check that the message is queued
-                expect(mailer._queue.length).to.equal(1);
+                mailer.send({
+                    mail: mail,
+                    encrypt: true,
+                    publicKeysArmored: publicKeysArmored,
+                    cleartextMessage: cleartextMessage
+                }, function(err) {
+                    expect(err).to.not.exist;
 
+                    done();
+                });
+            }
 
-                //
-                // Execute Test
-                //
-
-                ready(); // and ... weeeeeeee
-            });
+            mailer.login();
         });
     });
 
     //
     // Helper Functions
     //
-
-    function utf8ToUInt8Array(str) {
-        var bufView = new Uint8Array(new ArrayBuffer(str.length));
+    function utf16ToUInt8Array(str) {
+        var bufView = new Uint16Array(new ArrayBuffer(str.length * 2));
         for (var i = 0, strLen = str.length; i < strLen; i++) {
             bufView[i] = str.charCodeAt(i);
         }

@@ -13,9 +13,9 @@ module.exports = function(grunt) {
         mochaTest: {
             all: {
                 options: {
-                    reporter: 'dot'
+                    reporter: 'Spec'
                 },
-                src: ['test/unit.js', 'test/integration.js']
+                src: ['test/unit.js', 'test/local-integration.js', 'test/integration.js']
             },
             example: {
                 options: {
@@ -26,12 +26,6 @@ module.exports = function(grunt) {
         },
 
         connect: {
-            test: {
-                options: {
-                    port: 8123,
-                    base: '.'
-                }
-            },
             dev: {
                 options: {
                     port: 8124,
@@ -59,6 +53,6 @@ module.exports = function(grunt) {
 
     // Tasks
     grunt.registerTask('dev', ['connect:dev']);
-    grunt.registerTask('default', ['jshint', 'mochaTest:all', 'connect:test', 'mocha_phantomjs:all']);
+    grunt.registerTask('default', ['jshint', 'mochaTest:all', 'mocha_phantomjs:all']);
     grunt.registerTask('example', ['jshint', 'mochaTest:example']);
 };
