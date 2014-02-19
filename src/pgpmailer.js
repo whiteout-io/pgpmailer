@@ -124,6 +124,8 @@ define(function(require) {
             return;
         }
 
+        self._busy = true;
+
         self._current = self._queue.shift();
         callback = self._current.callback;
 
