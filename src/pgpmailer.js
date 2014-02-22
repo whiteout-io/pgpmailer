@@ -77,22 +77,44 @@ define(function(require) {
      * @param {Function} callback(error) Indicates that the mail has been sent, or gives information in case an error occurred.
      */
     PgpMailer.prototype.send = function(options, callback) {
-        this._queue.push({
-            buildOptions: {
-                mail: options.mail,
-                encrypt: options.encrypt,
-                cleartextMessage: options.cleartextMessage,
-                publicKeysArmored: options.publicKeysArmored
-            },
-            callback: callback
-        });
+        var self = this;
 
-        this._processQueue();
+        if (options.encrypt) {
+            self._pgpbuilder.encrypt(options, function(error) {
+                if (error) {
+                    callback(error);
+                    return;
+                }
+
+                self._pgpbuilder.buildEncrypted(options, onBuildFinished);
+            });
+            return;
+        }
+
+        self._pgpbuilder.buildSigned(options, onBuildFinished);
+
+        function onBuildFinished(error, rfc, envelope) {
+            if (error) {
+                callback(error);
+                return;
+            }
+
+            self._queue.push({
+                envelope: envelope,
+                rfc: rfc,
+                callback: callback
+            });
+
+            self._processQueue();
+        }
+    };
+
+    PgpMailer.prototype.encrypt = function(options, callback) {
+        this._pgpbuilder.encrypt(options, callback);
     };
 
     PgpMailer.prototype._processQueue = function() {
-        var currentBuildData,
-            self = this;
+        var self = this;
 
         if (self._busy || self._queue.length === 0) {
             return;
@@ -100,27 +122,19 @@ define(function(require) {
 
         self._busy = true;
 
-        currentBuildData = self._queue.shift();
-        self._pgpbuilder.build(currentBuildData.buildOptions, onBuildFinished);
+        var current = self._queue.shift();
 
-        function onBuildFinished(error, envelope, rfcMessage) {
-            if (error) {
-                currentBuildData.callback(error);
-                return;
-            }
+        self._smtp.on('message', function() {
+            self._smtp.end(current.rfc);
+        });
 
-            self._smtp.on('message', function() {
-                self._smtp.end(rfcMessage);
-            });
+        self._smtp.on('rcptFailed', current.callback);
 
-            self._smtp.on('rcptFailed', currentBuildData.callback);
+        self._smtp.on('ready', function() {
+            current.callback();
+        });
 
-            self._smtp.on('ready', function() {
-                currentBuildData.callback();
-            });
-
-            self._smtp.useEnvelope(envelope);
-        }
+        self._smtp.useEnvelope(current.envelope);
     };
 
     return PgpMailer;

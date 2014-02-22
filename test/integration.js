@@ -13,8 +13,8 @@ define(function(require) {
 
     chai.Assertion.includeStack = true;
 
-    describe('send', function() {
-        it('should work', function(done) {
+    describe('integration test', function() {
+        it('should send two messages', function(done) {
             this.timeout(60000);
 
             var privKeyArmored = '-----BEGIN PGP PRIVATE KEY BLOCK-----\r\n' +
@@ -91,17 +91,6 @@ define(function(require) {
             });
 
             var publicKeysArmored = [pubkeyArmored];
-            var mail = {
-                from: ['safewithme.testuser@gmail.com'],
-                to: ['safewithme.testuser@gmail.com'],
-                subject: 'hello, pgp',
-                body: 'hello, world!',
-                attachments: [{
-                    contentType: 'text/plain',
-                    fileName: 'foobar.txt',
-                    uint8Array: utf16ToUInt8Array('I AM THE MIGHTY ATTACHMENT!')
-                }]
-            };
             var cleartextMessage = 'This message is prepended to your encrypted message and displayed in the clear even if your recipient does not speak PGP!';
 
             mailer.setPrivateKey({
@@ -115,7 +104,17 @@ define(function(require) {
 
             function send() {
                 mailer.send({
-                    mail: mail,
+                    mail: {
+                        from: ['safewithme.testuser@gmail.com'],
+                        to: ['safewithme.testuser@gmail.com'],
+                        subject: 'hello, pgp! pt 1',
+                        body: 'helloooooooo.',
+                        attachments: [{
+                            contentType: 'text/plain',
+                            fileName: 'foobar.txt',
+                            uint8Array: utf16ToUInt8Array('I AM THE MIGHTY ATTACHMENT!')
+                        }]
+                    },
                     encrypt: true,
                     publicKeysArmored: publicKeysArmored,
                     cleartextMessage: cleartextMessage
@@ -123,7 +122,17 @@ define(function(require) {
                     expect(err).to.not.exist;
 
                     mailer.send({
-                        mail: mail,
+                        mail: {
+                            from: ['safewithme.testuser@gmail.com'],
+                            to: ['safewithme.testuser@gmail.com'],
+                            subject: 'hello, pgp! pt 2',
+                            body: 'hi there!',
+                            attachments: [{
+                                contentType: 'text/plain',
+                                fileName: 'foobar.txt',
+                                uint8Array: utf16ToUInt8Array('I AM THE MIGHTY ATTACHMENT!')
+                            }]
+                        },
                         encrypt: true,
                         publicKeysArmored: publicKeysArmored,
                         cleartextMessage: cleartextMessage

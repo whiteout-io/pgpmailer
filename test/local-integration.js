@@ -25,7 +25,7 @@ define(function(require) {
     SmtpContructorMock.prototype.end = function() {};
     SmtpContructorMock.prototype.quite = function() {};
 
-    describe('integration tests', function() {
+    describe('local integration tests', function() {
         var mailer, smtpMock, ready, pubkeyArmored;
 
         beforeEach(function(done) {
@@ -130,7 +130,7 @@ define(function(require) {
 
         describe('send', function() {
             it('should send a message with attachments and decode the output correctly', function(done) {
-                var cb, mail, publicKeysArmored, expectedAttachmentPayload, cleartextMessage;
+                var cb, mail, body, publicKeysArmored, expectedAttachmentPayload, cleartextMessage;
 
                 //
                 // Setup Fixture
@@ -154,6 +154,7 @@ define(function(require) {
                     expectedAttachmentPayload = utf8ToUInt8Array(randomBinStr);
                 }
 
+                body = 'hello, world!';
                 mail = {
                     from: [{
                         address: 'a@a.io'
@@ -164,7 +165,7 @@ define(function(require) {
                         address: 'c@c.io'
                     }],
                     subject: 'foobar',
-                    body: 'hello, world!',
+                    body: body,
                     attachments: [{
                         mimeType: 'text/x-markdown',
                         filename: 'a.txt',
@@ -193,7 +194,7 @@ define(function(require) {
                     var parser = new MailParser();
                     parser.on('end', function(parsedMail) {
                         expect(parsedMail).to.exist;
-                        expect(parsedMail.text.replace(/\n/g, '')).to.equal(mail.body);
+                        expect(parsedMail.text.replace(/\n/g, '')).to.equal(body);
                         var attachmentBinStr = parsedMail.attachments[0].content.toString('binary');
                         var attachmentPayload = utf8ToUInt8Array(attachmentBinStr);
                         expect(attachmentPayload.length).to.equal(expectedAttachmentPayload.length);
