@@ -119,13 +119,9 @@ define(function(require) {
             });
         });
 
-        describe('send', function() {
-            it('should send an encrypted message with attachments', function(done) {
+        describe('send encrypted', function() {
+            it('should encrypt and send an message with attachments', function(done) {
                 var cb, mockMail, mockKeys, mockCtMsg, mockEnvelope, mockCompiledMail;
-
-                //
-                // Setup Fixture
-                //
 
                 mockMail = {};
                 mockKeys = ['publicA', 'publicB', 'publicC', 'publicD', 'publicE'];
@@ -169,6 +165,121 @@ define(function(require) {
                 ready();
             });
 
+            it('should send an previously encrypted message with attachments', function(done) {
+                var cb, mockMail, mockKeys, mockCtMsg, mockEnvelope, mockCompiledMail;
+
+                mockMail = {
+                    encrypted: true
+                };
+                mockKeys = ['publicA', 'publicB', 'publicC', 'publicD', 'publicE'];
+                mockCtMsg = 'hello!';
+                mockEnvelope = {};
+                mockCompiledMail = {};
+
+                smtpMock.on.withArgs('message').yieldsAsync();
+                smtpMock.on.withArgs('ready').yieldsAsync();
+
+                builderMock.encrypt.yieldsAsync();
+                builderMock.buildEncrypted.yieldsAsync(null, mockCompiledMail, mockEnvelope);
+
+                cb = function(err) {
+                    expect(err).to.not.exist;
+
+                    expect(smtpMock.useEnvelope.calledOnce).to.be.true;
+                    expect(smtpMock.useEnvelope.calledWith(mockEnvelope)).to.be.true;
+                    expect(smtpMock.end.calledOnce).to.be.true;
+                    expect(smtpMock.end.calledWith(mockCompiledMail)).to.be.true;
+                    expect(smtpMock.on.calledWith('message')).to.be.true;
+                    expect(smtpMock.on.calledWith('rcptFailed')).to.be.true;
+                    expect(smtpMock.on.calledWith('ready')).to.be.true;
+
+                    expect(builderMock.encrypt.called).to.be.false;
+                    expect(builderMock.buildEncrypted.calledOnce).to.be.true;
+
+                    done();
+                };
+
+                mailer.send({
+                    mail: mockMail,
+                    encrypt: true,
+                    publicKeysArmored: mockKeys,
+                    cleartextMessage: mockCtMsg
+                }, cb, builderMock);
+
+                ready();
+            });
+
+            it('should not send due to build error', function(done) {
+                var cb, mockMail, mockKeys, mockCtMsg;
+
+                mockMail = {};
+                mockKeys = ['publicA', 'publicB', 'publicC', 'publicD', 'publicE'];
+                mockCtMsg = 'hello!';
+
+                builderMock.encrypt.yieldsAsync();
+                builderMock.buildEncrypted.yieldsAsync({});
+
+                cb = function(err) {
+                    expect(err).to.exist;
+
+                    expect(smtpMock.useEnvelope.called).to.be.false;
+                    expect(smtpMock.end.called).to.be.false;
+                    expect(smtpMock.on.calledWith('message')).to.be.false;
+                    expect(smtpMock.on.calledWith('rcptFailed')).to.be.false;
+                    expect(smtpMock.on.calledWith('ready')).to.be.false;
+
+                    expect(builderMock.encrypt.calledOnce).to.be.true;
+                    expect(builderMock.buildEncrypted.calledOnce).to.be.true;
+
+                    done();
+                };
+
+                mailer.send({
+                    mail: mockMail,
+                    encrypt: true,
+                    publicKeysArmored: mockKeys,
+                    cleartextMessage: mockCtMsg
+                }, cb, builderMock);
+
+                ready();
+            });
+
+            it('should not send due to encryption error', function(done) {
+                var cb, mockMail, mockKeys, mockCtMsg;
+
+                mockMail = {};
+                mockKeys = ['publicA', 'publicB', 'publicC', 'publicD', 'publicE'];
+                mockCtMsg = 'hello!';
+
+                builderMock.encrypt.yieldsAsync({});
+
+                cb = function(err) {
+                    expect(err).to.exist;
+
+                    expect(smtpMock.useEnvelope.called).to.be.false;
+                    expect(smtpMock.end.called).to.be.false;
+                    expect(smtpMock.on.calledWith('message')).to.be.false;
+                    expect(smtpMock.on.calledWith('rcptFailed')).to.be.false;
+                    expect(smtpMock.on.calledWith('ready')).to.be.false;
+
+                    expect(builderMock.encrypt.calledOnce).to.be.true;
+                    expect(builderMock.buildEncrypted.called).to.be.false;
+
+                    done();
+                };
+
+                mailer.send({
+                    mail: mockMail,
+                    encrypt: true,
+                    publicKeysArmored: mockKeys,
+                    cleartextMessage: mockCtMsg
+                }, cb, builderMock);
+
+                ready();
+            });
+        });
+
+        describe('send signed', function() {
             it('should send a signed message with attachments', function(done) {
                 var cb, mockMail, mockKeys, mockCtMsg, mockEnvelope, mockCompiledMail;
 
@@ -215,30 +326,28 @@ define(function(require) {
 
                 ready();
             });
+        });
 
-            // it('should not send a message due to error', function(done) {
-            //     builderMock.build.yieldsAsync({});
-                
-            //     var cb = function(err) {
-            //         expect(err).to.exist;
+        describe('encrypt', function() {
+            it('should forward the call', function(done) {
+                builderMock.encrypt.yieldsAsync();
 
-            //         // check that the smtp client was called with the right stuff
-            //         expect(smtpMock.useEnvelope.called).to.be.false;
-            //         expect(smtpMock.end.called).to.be.false;
-            //         expect(smtpMock.on.calledWith('message')).to.be.false;
-            //         expect(smtpMock.on.calledWith('rcptFailed')).to.be.false;
-            //         expect(smtpMock.on.calledWith('ready')).to.be.false;
+                mailer.encrypt({}, function() {
+                    expect(builderMock.encrypt.calledOnce).to.be.true;
+                    done();
+                });
+            });
+        });
 
-            //         // check that the mailbuilder has built a clear text and a pgp mail and compiled the pgp mail
-            //         expect(builderMock.build.calledOnce).to.be.true;
+        describe('reEncrypt', function() {
+            it('should forward the call', function(done) {
+                builderMock.reEncrypt.yieldsAsync();
 
-            //         done();
-            //     };
-
-            //     // queue the mail & execute test
-            //     mailer.send({}, cb, builderMock);
-            //     ready();
-            // });
+                mailer.reEncrypt({}, function() {
+                    expect(builderMock.reEncrypt.calledOnce).to.be.true;
+                    done();
+                });
+            });
         });
     });
 });
