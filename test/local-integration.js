@@ -109,7 +109,7 @@ define(function(require) {
                 '=7Wpe\r\n' +
                 '-----END PGP PUBLIC KEY BLOCK-----';
 
-            mailer = new PgpMailer(opts, openpgp, simplesmtp);
+            mailer = new PgpMailer(opts, undefined, simplesmtp, openpgp);
 
             mailer.setPrivateKey({
                 privateKeyArmored: privKey,

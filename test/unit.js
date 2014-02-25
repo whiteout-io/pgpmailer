@@ -53,7 +53,7 @@ define(function(require) {
                 }
             };
 
-            mailer = new PgpMailer(opts, undefined, simplesmtp, builderMock);
+            mailer = new PgpMailer(opts, builderMock,  simplesmtp);
 
             expect(createClientStub.calledOnce).to.be.true;
             expect(createClientStub.calledWith(opts.port, opts.host, opts)).to.be.true;
