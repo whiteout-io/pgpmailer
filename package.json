@@ -22,20 +22,19 @@
     "test": "grunt"
   },
   "dependencies": {
-    "mailbuilder": "https://github.com/whiteout-io/mailbuilder/tarball/master",
-    "openpgp": "~0.4.0",
+    "pgpbuilder": "https://github.com/whiteout-io/pgpbuilder/tarball/master",
     "simplesmtp": "https://github.com/whiteout-io/simplesmtp/tarball/amd"
   },
   "devDependencies": {
+    "openpgp": "~0.4.0",
     "mailparser": "https://github.com/whiteout-io/mailparser/tarball/amd",
     "chai": "~1.8.1",
     "grunt": "0.4.1",
     "grunt-contrib-connect": "~0.6.0",
     "grunt-contrib-jshint": "0.6.4",
-    "grunt-mocha-phantomjs": "~0.4.0",
+    "grunt-mocha-phantomjs": "~0.4.1",
     "grunt-mocha-test": "~0.8.1",
     "mocha": "~1.16.2",
-    "phantomjs": "~1.9.7-1",
     "requirejs": "~2.1.10",
     "sinon": "~1.7.3",
     "sinon-chai": "~2.5.0"

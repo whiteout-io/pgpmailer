@@ -35,7 +35,7 @@ define(function(require) {
             });
 
             mailer.setPrivateKey({
-                privateKey: 'ASCII ARMORED PRIVATE KEY',
+                privateKeyArmored: 'ASCII ARMORED PRIVATE KEY',
                 passphrase: 'PASSPHRASE'
             }, function(error) {
                 expect(error).to.not.exist;
@@ -66,6 +66,8 @@ define(function(require) {
                 expect(err).to.not.exist;
                 done();
             });
+
+            mailer.login();
         });
     });
 
