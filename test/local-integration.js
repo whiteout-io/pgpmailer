@@ -26,20 +26,15 @@ define(function(require) {
     SmtpContructorMock.prototype.quite = function() {};
 
     describe('local integration tests', function() {
-        var mailer, smtpMock, ready, pubkeyArmored;
+        var mailer, smtpMock, pubkeyArmored;
 
         beforeEach(function(done) {
-            var opts, privKey;
+            var opts, privKey, connectStub;
 
             smtpMock = sinon.createStubInstance(SmtpContructorMock);
-            var connectStub = sinon.stub(simplesmtp, 'createClient', function() {
+            connectStub = sinon.stub(simplesmtp, 'connect', function() {
                 return smtpMock;
             });
-
-            // workaround to get a hold on the callback function that triggers the next mail to be sent
-            smtpMock.on.withArgs('idle', sinon.match(function(cb) {
-                ready = cb;
-            }));
 
             opts = {
                 host: 'hello.world.com',
@@ -109,23 +104,20 @@ define(function(require) {
                 '=7Wpe\r\n' +
                 '-----END PGP PUBLIC KEY BLOCK-----';
 
-            mailer = new PgpMailer(opts, undefined, simplesmtp, openpgp);
+            mailer = new PgpMailer(opts, undefined);
 
             mailer.setPrivateKey({
                 privateKeyArmored: privKey,
                 passphrase: 'passphrase'
             }, function(err) {
                 expect(err).to.not.exist;
-                expect(connectStub.calledOnce).to.be.true;
-                expect(connectStub.calledWith(opts.port, opts.host, opts)).to.be.true;
-                expect(smtpMock.on.calledWith('idle')).to.be.true;
-                expect(smtpMock.on.calledWith('error')).to.be.true;
+
                 done();
             });
         });
 
         afterEach(function() {
-            simplesmtp.createClient.restore();
+            simplesmtp.connect.restore();
         });
 
         describe('send', function() {
@@ -207,27 +199,13 @@ define(function(require) {
                     return true;
                 }));
 
-                //
-                // Prepare SUT
-                //
-
-                // queue the mail
+                // send the mail
                 mailer.send({
                     mail: mail,
                     encrypt: true,
                     publicKeysArmored: publicKeysArmored,
                     cleartextMessage: cleartextMessage
                 }, cb);
-
-                // check that the message is queued
-                expect(mailer._queue.length).to.equal(1);
-
-
-                //
-                // Execute Test
-                //
-
-                ready(); // and ... weeeeeeee
             });
         });
     });

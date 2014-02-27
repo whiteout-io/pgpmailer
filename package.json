@@ -23,7 +23,7 @@
   },
   "dependencies": {
     "pgpbuilder": "https://github.com/whiteout-io/pgpbuilder/tarball/master",
-    "simplesmtp": "https://github.com/whiteout-io/simplesmtp/tarball/amd"
+    "simplesmtp": "https://github.com/whiteout-io/simplesmtp/tarball/dev/no-login"
   },
   "devDependencies": {
     "openpgp": "~0.4.0",
