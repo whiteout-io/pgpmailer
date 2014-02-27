@@ -90,7 +90,6 @@ define(function(require) {
 
             smtp.on('message', function() {
                 smtp.on('idle', smtp.quit);
-
                 smtp.end(rfc);
             });
 
