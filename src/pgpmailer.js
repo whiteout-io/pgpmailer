@@ -89,16 +89,13 @@ define(function(require) {
             });
 
             smtp.on('message', function() {
-                smtp.on('idle', function() {
-                    smtp.quit();
-                });
+                smtp.on('idle', smtp.quit);
 
                 smtp.end(rfc);
             });
 
             smtp.on('ready', function() {
                 callback();
-                smtp.quit();
             });
         }
     };
