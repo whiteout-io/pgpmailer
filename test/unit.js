@@ -296,5 +296,16 @@ define(function(require) {
                 });
             });
         });
+
+        describe('reEncrypt', function() {
+            it('should forward the call', function(done) {
+                builderMock.reEncrypt.yieldsAsync();
+
+                mailer.reEncrypt({}, function() {
+                    expect(builderMock.reEncrypt.calledOnce).to.be.true;
+                    done();
+                });
+            });
+        });
     });
 });

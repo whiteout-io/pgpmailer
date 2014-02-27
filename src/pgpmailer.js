@@ -103,5 +103,9 @@ define(function(require) {
         this._pgpbuilder.encrypt(options, callback);
     };
 
+    PgpMailer.prototype.reEncrypt = function(options, callback) {
+        this._pgpbuilder.reEncrypt(options, callback);
+    };
+
     return PgpMailer;
 });
