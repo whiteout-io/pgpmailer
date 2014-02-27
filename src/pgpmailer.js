@@ -12,8 +12,7 @@ define(function(require) {
         PgpMailer;
 
     /**
-     * Constructor for the high level api. Will fire up the SMTP connection as soon as it is invoked.
-     * NB! The constructor will invoke options.onError and return undefined if there is an error while decrypting the private key.
+     * Constructor for the high level api.
      * @param {Number} options.port Port is the port to the server (defaults to 25 on non-secure and to 465 on secure connection).
      * @param {String} options.host Hostname of the server.
      * @param {String} options.auth.user Username for login
@@ -22,35 +21,10 @@ define(function(require) {
      * @param {String} options.tls Further optional object for tls.connect, e.g. { ca: 'PIN YOUR CA HERE' }
      * @param {String} options.onError Top-level error handler with information if an error occurred
      */
-    PgpMailer = function(options, pgpbuilder, smtp, pgp) {
-        this._queue = [];
-        this._busy = true;
-
-        this._pgpbuilder = pgpbuilder || new PgpBuilder(options, pgp);
-        this._smtp = (smtp || simplesmtp).createClient(options.port, options.host, options);
-
-        var ready = function() {
-            this._smtp.removeAllListeners('message');
-            this._smtp.removeAllListeners('rcptFailed');
-            this._smtp.removeAllListeners('ready');
-            this._busy = false;
-            this._processQueue();
-        };
-
-        // ready, waiting for an envelope
-        this._smtp.on('idle', ready.bind(this));
-        this._smtp.on('error', options.onError);
+    PgpMailer = function(options, pgpbuilder) {
+        this._options = options;
+        this._pgpbuilder = pgpbuilder || new PgpBuilder(options);
     };
-
-    PgpMailer.prototype.login = function() {
-        this._smtp.connect();
-    };
-
-    PgpMailer.prototype.logout = function(callback) {
-        this._smtp.quit();
-        this._smtp.once('end', callback);
-    };
-
 
     /**
      * Set the private key used to sign your messages
@@ -63,7 +37,7 @@ define(function(require) {
     };
 
     /**
-     * Queues a mail object for sending.
+     * Sends a mail object.
      * @param {Boolean} options.encrypt (optional) If true, the message will be encrypted with the public keys in options.publicKeysArmored. Otherwise, the message will be signed with the private key and sent in the clear. Default: false
      * @param {Object} options.mail.from Array containing one object with the ASCII string representing the sender address, e.g. 'foo@bar.io'
      * @param {Array} options.mail.to (optional) Array of objects with the ASCII string representing the recipient (e.g. ['the.dude@lebowski.com', 'donny@kerabatsos.com'])
@@ -105,13 +79,23 @@ define(function(require) {
                 return;
             }
 
-            self._queue.push({
-                envelope: envelope,
-                rfc: rfc,
-                callback: callback
+            var smtp = simplesmtp.connect(self._options.port, self._options.host, self._options);
+
+            smtp.on('error', callback);
+            smtp.on('rcptFailed', callback);
+
+            smtp.once('idle', function() {
+                smtp.useEnvelope(envelope);
             });
 
-            self._processQueue();
+            smtp.on('message', function() {
+                smtp.on('idle', smtp.quit);
+                smtp.end(rfc);
+            });
+
+            smtp.on('ready', function() {
+                callback();
+            });
         }
     };
 
@@ -121,30 +105,6 @@ define(function(require) {
 
     PgpMailer.prototype.reEncrypt = function(options, callback) {
         this._pgpbuilder.reEncrypt(options, callback);
-    };
-
-    PgpMailer.prototype._processQueue = function() {
-        var self = this;
-
-        if (self._busy || self._queue.length === 0) {
-            return;
-        }
-
-        self._busy = true;
-
-        var current = self._queue.shift();
-
-        self._smtp.on('message', function() {
-            self._smtp.end(current.rfc);
-        });
-
-        self._smtp.on('rcptFailed', current.callback);
-
-        self._smtp.on('ready', function() {
-            current.callback();
-        });
-
-        self._smtp.useEnvelope(current.envelope);
     };
 
     return PgpMailer;

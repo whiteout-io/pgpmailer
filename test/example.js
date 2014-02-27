@@ -1,12 +1,14 @@
-'use strict';
-
 if (typeof module === 'object' && typeof define !== 'function') {
     var define = function(factory) {
+        'use strict';
+
         module.exports = factory(require, exports, module);
     };
 }
 
 define(function(require) {
+    'use strict';
+
     var PgpMailer = require('../src/pgpmailer'),
         chai = require('chai'),
         expect = chai.expect;
@@ -66,8 +68,6 @@ define(function(require) {
                 expect(err).to.not.exist;
                 done();
             });
-
-            mailer.login();
         });
     });
 
