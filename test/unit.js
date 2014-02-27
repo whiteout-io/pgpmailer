@@ -87,7 +87,8 @@ define(function(require) {
                 mockEnvelope = {};
                 mockCompiledMail = {};
 
-                smtpMock.on.withArgs('idle').yields();
+                smtpMock.once.withArgs('idle').yields();
+                smtpMock.on.withArgs('idle').yieldsAsync();
                 smtpMock.on.withArgs('message').yields();
                 smtpMock.on.withArgs('ready').yields();
 
@@ -108,6 +109,8 @@ define(function(require) {
                     expect(smtpMock.useEnvelope.calledWith(mockEnvelope)).to.be.true;
                     expect(smtpMock.end.calledOnce).to.be.true;
                     expect(smtpMock.end.calledWith(mockCompiledMail)).to.be.true;
+                    expect(smtpMock.on.callCount).to.equal(5);
+                    expect(smtpMock.once.calledWith('idle')).to.be.true;
                     expect(smtpMock.on.calledWith('idle')).to.be.true;
                     expect(smtpMock.on.calledWith('error')).to.be.true;
                     expect(smtpMock.on.calledWith('message')).to.be.true;
@@ -137,7 +140,8 @@ define(function(require) {
                 mockEnvelope = {};
                 mockCompiledMail = {};
 
-                smtpMock.on.withArgs('idle').yields();
+                smtpMock.once.withArgs('idle').yields();
+                smtpMock.on.withArgs('idle').yieldsAsync();
                 smtpMock.on.withArgs('message').yields();
                 smtpMock.on.withArgs('ready').yields();
 
@@ -158,6 +162,8 @@ define(function(require) {
                     expect(smtpMock.useEnvelope.calledWith(mockEnvelope)).to.be.true;
                     expect(smtpMock.end.calledOnce).to.be.true;
                     expect(smtpMock.end.calledWith(mockCompiledMail)).to.be.true;
+                    expect(smtpMock.on.callCount).to.equal(5);
+                    expect(smtpMock.once.calledWith('idle')).to.be.true;
                     expect(smtpMock.on.calledWith('idle')).to.be.true;
                     expect(smtpMock.on.calledWith('error')).to.be.true;
                     expect(smtpMock.on.calledWith('message')).to.be.true;
@@ -248,7 +254,8 @@ define(function(require) {
                 mockEnvelope = {};
                 mockCompiledMail = {};
 
-                smtpMock.on.withArgs('idle').yields();
+                smtpMock.once.withArgs('idle').yields();
+                smtpMock.on.withArgs('idle').yieldsAsync();
                 smtpMock.on.withArgs('message').yields();
                 smtpMock.on.withArgs('ready').yields();
 
@@ -264,6 +271,8 @@ define(function(require) {
                     expect(smtpMock.useEnvelope.calledWith(mockEnvelope)).to.be.true;
                     expect(smtpMock.end.calledOnce).to.be.true;
                     expect(smtpMock.end.calledWith(mockCompiledMail)).to.be.true;
+                    expect(smtpMock.on.callCount).to.equal(5);
+                    expect(smtpMock.once.calledWith('idle')).to.be.true;
                     expect(smtpMock.on.calledWith('idle')).to.be.true;
                     expect(smtpMock.on.calledWith('error')).to.be.true;
                     expect(smtpMock.on.calledWith('message')).to.be.true;

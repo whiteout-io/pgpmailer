@@ -84,11 +84,15 @@ define(function(require) {
             smtp.on('error', callback);
             smtp.on('rcptFailed', callback);
 
-            smtp.on('idle', function() {
+            smtp.once('idle', function() {
                 smtp.useEnvelope(envelope);
             });
 
             smtp.on('message', function() {
+                smtp.on('idle', function() {
+                    smtp.quit();
+                });
+
                 smtp.end(rfc);
             });
 
