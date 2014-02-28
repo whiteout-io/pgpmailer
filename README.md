@@ -89,9 +89,9 @@ Here's what you do in you own app
         subject: 'hello, pgp',
         body: 'hello, world!',
         attachments: [{
-            contentType: 'text/plain',
-            fileName: 'a.txt',
-            uint8Array: // a UInt8Array that contains your attachment
+            mimeType: 'text/plain',
+            filename: 'a.txt',
+            content: // a UInt8Array that contains your attachment
         }]
     };
     var cleartextMessage = 'This message is prepended to your encrypted message and displayed in the clear even if your recipient does not speak PGP!';
