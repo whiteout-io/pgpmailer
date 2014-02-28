@@ -121,9 +121,9 @@ define(function(require) {
                         subject: 'hello, pgp! pt 1',
                         body: 'helloooooooo.',
                         attachments: [{
-                            contentType: 'text/plain',
-                            fileName: 'foobar.txt',
-                            uint8Array: utf16ToUInt8Array('I AM THE MIGHTY ATTACHMENT!')
+                            mimeType: 'text/plain',
+                            filename: 'foobar.txt',
+                            content: asciiToUInt8Array('I AM THE MIGHTY ATTACHMENT!')
                         }]
                     },
                     encrypt: true,
@@ -138,9 +138,9 @@ define(function(require) {
                         subject: 'hello, pgp! pt 2',
                         body: 'hi there!',
                         attachments: [{
-                            contentType: 'text/plain',
-                            fileName: 'foobar.txt',
-                            uint8Array: utf16ToUInt8Array('I AM THE MIGHTY ATTACHMENT!')
+                            mimeType: 'text/plain',
+                            filename: 'foobar.txt',
+                            content: asciiToUInt8Array('I AM THE MIGHTY ATTACHMENT!')
                         }]
                     },
                     encrypt: true,
@@ -154,8 +154,8 @@ define(function(require) {
     //
     // Helper Functions
     //
-    function utf16ToUInt8Array(str) {
-        var bufView = new Uint16Array(new ArrayBuffer(str.length * 2));
+    function asciiToUInt8Array(str) {
+        var bufView = new Uint8Array(str.length);
         for (var i = 0, strLen = str.length; i < strLen; i++) {
             bufView[i] = str.charCodeAt(i);
         }

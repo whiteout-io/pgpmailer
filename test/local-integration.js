@@ -143,7 +143,7 @@ define(function(require) {
                 } else {
                     // node.js
                     var randomBinStr = require('crypto').randomBytes(size).toString('binary');
-                    expectedAttachmentPayload = utf8ToUInt8Array(randomBinStr);
+                    expectedAttachmentPayload = asciiToUInt8Array(randomBinStr);
                 }
 
                 body = 'hello, world!';
@@ -188,7 +188,7 @@ define(function(require) {
                         expect(parsedMail).to.exist;
                         expect(parsedMail.text.replace(/\n/g, '')).to.equal(body);
                         var attachmentBinStr = parsedMail.attachments[0].content.toString('binary');
-                        var attachmentPayload = utf8ToUInt8Array(attachmentBinStr);
+                        var attachmentPayload = asciiToUInt8Array(attachmentBinStr);
                         expect(attachmentPayload.length).to.equal(expectedAttachmentPayload.length);
                         expect(attachmentPayload).to.deep.equal(expectedAttachmentPayload);
 
@@ -214,8 +214,8 @@ define(function(require) {
     // Helper Functions
     //
 
-    function utf8ToUInt8Array(str) {
-        var bufView = new Uint8Array(new ArrayBuffer(str.length));
+    function asciiToUInt8Array(str) {
+        var bufView = new Uint8Array(str.length);
         for (var i = 0, strLen = str.length; i < strLen; i++) {
             bufView[i] = str.charCodeAt(i);
         }
