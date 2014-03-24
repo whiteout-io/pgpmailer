@@ -9,7 +9,7 @@
     "type": "git",
     "url": "http://github.com/whiteout-io/pgpmailer.git"
   },
-  "version": "0.0.1",
+  "version": "0.1.0",
   "licenses": [{
     "type": "MIT",
     "url": "http://github.com/whiteout-io/pgpmailer/blob/master/LICENSE"
@@ -22,8 +22,8 @@
     "test": "grunt"
   },
   "dependencies": {
-    "pgpbuilder": "https://github.com/whiteout-io/pgpbuilder/tarball/master",
-    "simplesmtp": "https://github.com/whiteout-io/simplesmtp/tarball/amd"
+    "pgpbuilder": "https://github.com/whiteout-io/pgpbuilder/tarball/v0.1.0",
+    "simplesmtp": "https://github.com/whiteout-io/simplesmtp/tarball/v0.4.0"
   },
   "devDependencies": {
     "openpgp": "~0.4.0",
