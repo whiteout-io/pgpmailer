@@ -23,7 +23,7 @@
   },
   "dependencies": {
     "pgpbuilder": "https://github.com/whiteout-io/pgpbuilder/tarball/v0.1.0",
-    "simplesmtp": "https://github.com/whiteout-io/simplesmtp/tarball/v0.4.0"
+    "smtpclient": "https://github.com/whiteout-io/smtpclient/tarball/dev/integrate"
   },
   "devDependencies": {
     "openpgp": "~0.4.0",
@@ -37,7 +37,8 @@
     "mocha": "~1.16.2",
     "requirejs": "~2.1.10",
     "sinon": "~1.7.3",
-    "sinon-chai": "~2.5.0"
+    "sinon-chai": "~2.5.0",
+    "arraybuffer-slice": "0.0.2"
   },
   "keywords": [
     "e-mail",

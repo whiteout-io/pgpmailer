@@ -8,7 +8,7 @@ if (typeof module === 'object' && typeof define !== 'function') {
 
 define(function(require) {
     var PgpBuilder = require('pgpbuilder'),
-        simplesmtp = require('simplesmtp'),
+        SmtpClient = require('smtpclient'),
         PgpMailer;
 
     /**
@@ -24,6 +24,10 @@ define(function(require) {
     PgpMailer = function(options, pgpbuilder) {
         this._options = options;
         this._pgpbuilder = pgpbuilder || new PgpBuilder(options);
+        this._smtpClient = new SmtpClient(options.host, options.port, {
+            useSSL: options.secureConnection,
+            ca: options.tls.ca
+        });
     };
 
     /**
@@ -79,23 +83,38 @@ define(function(require) {
                 return;
             }
 
-            var smtp = simplesmtp.connect(self._options.port, self._options.host, self._options);
+            self._smtpClient.onerror = callback;
+            self._smtpClient.connect();
 
-            smtp.on('error', callback);
-            smtp.on('rcptFailed', callback);
+            self._smtpClient.onidle = function() {
+                self._smtpClient.onidle = function() {};
+                self._smtpClient.useEnvelope(envelope);
+            };
 
-            smtp.once('idle', function() {
-                smtp.useEnvelope(envelope);
-            });
+            self._smtpClient.ondone = function(success) {
+                if (!success) {
+                    self._smtpClient.quit();
+                    callback({
+                        errMsg: 'Sent message was not queued successfully by SMTP server!'
+                    });
+                    return;
+                }
 
-            smtp.on('message', function() {
-                smtp.on('idle', smtp.quit);
-                smtp.end(rfc);
-            });
+                self._smtpClient.onclose = callback;
+                self._smtpClient.quit();
+            };
 
-            smtp.on('ready', function() {
-                callback();
-            });
+            self._smtpClient.onready = function(failedRecipients) {
+                if (failedRecipients) {
+                    self._smtpClient.quit();
+                    callback({
+                        errMsg: 'Failed recipients: ' + JSON.stringify(failedRecipients)
+                    });
+                    return;
+                }
+
+                self._smtpClient.end(rfc);
+            };
         }
     };
 
