@@ -13,19 +13,19 @@ module.exports = function(grunt) {
         mochaTest: {
             all: {
                 options: {
-                    reporter: 'dot'
+                    reporter: 'spec'
                 },
                 src: ['test/unit.js', 'test/local-integration.js']
             },
             integration: {
                 options: {
-                    reporter: 'dot'
+                    reporter: 'spec'
                 },
                 src: ['test/integration.js']
             },
             example: {
                 options: {
-                    reporter: 'dot'
+                    reporter: 'spec'
                 },
                 src: ['test/example.js']
             }
@@ -44,7 +44,7 @@ module.exports = function(grunt) {
         mocha_phantomjs: {
             all: {
                 options: {
-                    reporter: 'dot'
+                    reporter: 'spec'
                 },
                 src: ['test/unit.html']
             }

@@ -23,10 +23,11 @@
   },
   "dependencies": {
     "pgpbuilder": "https://github.com/whiteout-io/pgpbuilder/tarball/v0.1.0",
-    "smtpclient": "https://github.com/whiteout-io/smtpclient/tarball/dev/integrate"
+    "smtpclient": "https://github.com/whiteout-io/smtpclient/tarball/v0.1.2"
   },
   "devDependencies": {
-    "openpgp": "~0.4.0",
+    "openpgp": "~0.5.1",
+    "simplesmtp": "https://github.com/whiteout-io/simplesmtp/tarball/v0.4.0",
     "mailparser": "https://github.com/whiteout-io/mailparser/tarball/amd",
     "chai": "~1.8.1",
     "grunt": "0.4.1",
