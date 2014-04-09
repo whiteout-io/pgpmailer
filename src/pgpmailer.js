@@ -21,9 +21,9 @@ define(function(require) {
      * @param {String} options.tls Further optional object for tls.connect, e.g. { ca: 'PIN YOUR CA HERE' }
      * @param {String} options.onError Top-level error handler with information if an error occurred
      */
-    PgpMailer = function(options, pgpbuilder) {
+    PgpMailer = function(options) {
         this._options = options;
-        this._pgpbuilder = pgpbuilder || new PgpBuilder(options);
+        this._pgpbuilder = new PgpBuilder(options);
         this._smtpClient = new SmtpClient(options.host, options.port, {
             useSSL: options.secureConnection,
             ca: options.tls.ca
@@ -84,11 +84,25 @@ define(function(require) {
             }
 
             self._smtpClient.onerror = callback;
-            self._smtpClient.connect();
 
             self._smtpClient.onidle = function() {
+                // remove idle listener to prevent infinite loop
                 self._smtpClient.onidle = function() {};
+                // send envelope
                 self._smtpClient.useEnvelope(envelope);
+            };
+
+            self._smtpClient.onready = function(failedRecipients) {
+                if (failedRecipients) {
+                    self._smtpClient.quit();
+                    callback({
+                        errMsg: 'Failed recipients: ' + JSON.stringify(failedRecipients)
+                    });
+                    return;
+                }
+
+                // send rfc body
+                self._smtpClient.end(rfc);
             };
 
             self._smtpClient.ondone = function(success) {
@@ -104,17 +118,8 @@ define(function(require) {
                 self._smtpClient.quit();
             };
 
-            self._smtpClient.onready = function(failedRecipients) {
-                if (failedRecipients) {
-                    self._smtpClient.quit();
-                    callback({
-                        errMsg: 'Failed recipients: ' + JSON.stringify(failedRecipients)
-                    });
-                    return;
-                }
-
-                self._smtpClient.end(rfc);
-            };
+            // connect and wait for idle
+            self._smtpClient.connect();
         }
     };
 

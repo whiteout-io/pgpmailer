@@ -38,9 +38,13 @@ require.config({
         'node-string-decoder': '../node_modules/pgpbuilder/node_modules/mailbuilder/node_modules/mimelib/node_modules/node-shims/src/node-string-decoder',
         'setimmediate': '../node_modules/pgpbuilder/node_modules/mailbuilder/node_modules/mimelib/node_modules/node-shims/node_modules/setimmediate/setImmediate',
         'smtpclient': '../node_modules/smtpclient/src/smtpclient',
+        'smtpclient-response-parser': '../node_modules/smtpclient/src/smtpclient-response-parser',
+        'tcp-socket': '../node_modules/smtpclient/node_modules/tcp-socket/src/tcp-socket',
+        'stringencoding': '../node_modules/smtpclient/node_modules/stringencoding/dist/stringencoding',
         'xoauth2': '../node_modules/simplesmtp/node_modules/xoauth2/src/xoauth2',
         'openpgp': 'lib/openpgp.min',
         'crypto': 'lib/dummy',
+        'forge': 'lib/forge.min',
         'node-forge': '../node_modules/pgpbuilder/node_modules/mailbuilder/node_modules/mimelib/node_modules/node-shims/node_modules/node-forge/js/forge',
         'aes': '../node_modules/pgpbuilder/node_modules/mailbuilder/node_modules/mimelib/node_modules/node-shims/node_modules/node-forge/js/aes',
         'aesCipherSuites': '../node_modules/pgpbuilder/node_modules/mailbuilder/node_modules/mimelib/node_modules/node-shims/node_modules/node-forge/js/aesCipherSuites',
@@ -86,6 +90,29 @@ require.config({
     }
 });
 
+// add function.bind polyfill
+if (!Function.prototype.bind) {
+    Function.prototype.bind = function(oThis) {
+        if (typeof this !== "function") {
+            // closest thing possible to the ECMAScript 5 internal IsCallable function
+            throw new TypeError("Function.prototype.bind - what is trying to be bound is not callable");
+        }
+
+        var aArgs = Array.prototype.slice.call(arguments, 1),
+            fToBind = this,
+            FNOP = function() {},
+            fBound = function() {
+                return fToBind.apply(this instanceof FNOP && oThis ? this : oThis,
+                    aArgs.concat(Array.prototype.slice.call(arguments)));
+            };
+
+        FNOP.prototype = this.prototype;
+        fBound.prototype = new FNOP();
+
+        return fBound;
+    };
+}
+
 mocha.setup('bdd');
 if (window.mochaPhantomJS) {
     // the integration test does not work in phantomjs
@@ -93,7 +120,7 @@ if (window.mochaPhantomJS) {
         mochaPhantomJS.run();
     });
 } else {
-    require(['unit', 'local-integration'], function() {
+    require(['unit' /*, 'local-integration'*/ ], function() {
         mocha.run();
     });
 }

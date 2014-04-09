@@ -12,30 +12,14 @@ define(function(require) {
         expect = chai.expect,
         PgpMailer = require('../src/pgpmailer'),
         PgpBuilder = require('pgpbuilder'),
-        simplesmtp = require('simplesmtp');
+        SmtpClient = require('smtpclient');
 
     chai.Assertion.includeStack = true;
 
-    var SmtpContructorMock = function() {};
-    SmtpContructorMock.prototype.connect = function() {};
-    SmtpContructorMock.prototype.quit = function() {};
-    SmtpContructorMock.prototype.on = function() {};
-    SmtpContructorMock.prototype.once = function() {};
-    SmtpContructorMock.prototype.removeAllListeners = function() {};
-    SmtpContructorMock.prototype.useEnvelope = function() {};
-    SmtpContructorMock.prototype.end = function() {};
-
     describe('unit tests', function() {
-        var mailer, smtpMock, builderMock, connectStub, opts;
+        var mailer, smtpClientStub, builderMock, opts;
 
         beforeEach(function() {
-            builderMock = sinon.createStubInstance(PgpBuilder);
-
-            smtpMock = sinon.createStubInstance(SmtpContructorMock);
-            connectStub = sinon.stub(simplesmtp, 'connect', function() {
-                return smtpMock;
-            });
-
             opts = {
                 host: 'hello.world.com',
                 port: 1337,
@@ -46,12 +30,12 @@ define(function(require) {
                 }
             };
 
-            mailer = new PgpMailer(opts, builderMock);
+            mailer = new PgpMailer(opts);
+            mailer._pgpbuilder = builderMock = sinon.createStubInstance(PgpBuilder);
+            mailer._smtpClient = smtpClientStub = sinon.createStubInstance(SmtpClient);
         });
 
-        afterEach(function() {
-            simplesmtp.connect.restore();
-        });
+        afterEach(function() {});
 
         describe('set private key', function() {
             it('should set the private key', function(done) {
@@ -78,7 +62,7 @@ define(function(require) {
         });
 
         describe('send encrypted', function() {
-            it('should encrypt and send an message with attachments', function(done) {
+            it('should should fail due to error in smtp client', function(done) {
                 var cb, mockMail, mockKeys, mockCtMsg, mockEnvelope, mockCompiledMail;
 
                 mockMail = {};
@@ -87,35 +71,21 @@ define(function(require) {
                 mockEnvelope = {};
                 mockCompiledMail = {};
 
-                smtpMock.once.withArgs('idle').yields();
-                smtpMock.on.withArgs('idle').yieldsAsync();
-                smtpMock.on.withArgs('message').yields();
-                smtpMock.on.withArgs('ready').yields();
-
-                builderMock.encrypt.yieldsAsync();
-                builderMock.buildEncrypted.yieldsAsync(null, mockCompiledMail, mockEnvelope);
+                builderMock.encrypt.yields();
+                builderMock.buildEncrypted.yields(null, mockCompiledMail, mockEnvelope);
 
                 cb = function(err) {
-                    expect(err).to.not.exist;
+                    expect(err).to.exist;
 
                     // check that the mailbuilder has built a clear text and a pgp mail and compiled the pgp mail
                     expect(builderMock.encrypt.calledOnce).to.be.true;
                     expect(builderMock.buildEncrypted.calledOnce).to.be.true;
 
                     // check that the smtp client was called with the right stuff
-                    expect(connectStub.calledOnce).to.be.true;
-                    expect(connectStub.calledWith(opts.port, opts.host, opts)).to.be.true;
-                    expect(smtpMock.useEnvelope.calledOnce).to.be.true;
-                    expect(smtpMock.useEnvelope.calledWith(mockEnvelope)).to.be.true;
-                    expect(smtpMock.end.calledOnce).to.be.true;
-                    expect(smtpMock.end.calledWith(mockCompiledMail)).to.be.true;
-                    expect(smtpMock.on.callCount).to.equal(5);
-                    expect(smtpMock.once.calledWith('idle')).to.be.true;
-                    expect(smtpMock.on.calledWith('idle')).to.be.true;
-                    expect(smtpMock.on.calledWith('error')).to.be.true;
-                    expect(smtpMock.on.calledWith('message')).to.be.true;
-                    expect(smtpMock.on.calledWith('rcptFailed')).to.be.true;
-                    expect(smtpMock.on.calledWith('ready')).to.be.true;
+                    expect(smtpClientStub.connect.callCount).to.equal(1);
+                    expect(smtpClientStub.useEnvelope.callCount).to.equal(0);
+                    expect(smtpClientStub.end.callCount).to.equal(0);
+                    expect(smtpClientStub.quit.callCount).to.equal(0);
 
                     done();
                 };
@@ -127,6 +97,135 @@ define(function(require) {
                     publicKeysArmored: mockKeys,
                     cleartextMessage: mockCtMsg
                 }, cb);
+
+                // fire event in the order smtpClient would
+                smtpClientStub.onerror(new Error('Boom!'));
+            });
+
+            it('should should fail due to failedRecipients in smtp client', function(done) {
+                var cb, mockMail, mockKeys, mockCtMsg, mockEnvelope, mockCompiledMail;
+
+                mockMail = {};
+                mockKeys = ['publicA', 'publicB', 'publicC', 'publicD', 'publicE'];
+                mockCtMsg = 'hello!';
+                mockEnvelope = {};
+                mockCompiledMail = {};
+
+                builderMock.encrypt.yields();
+                builderMock.buildEncrypted.yields(null, mockCompiledMail, mockEnvelope);
+
+                cb = function(err) {
+                    expect(err).to.exist;
+
+                    // check that the mailbuilder has built a clear text and a pgp mail and compiled the pgp mail
+                    expect(builderMock.encrypt.calledOnce).to.be.true;
+                    expect(builderMock.buildEncrypted.calledOnce).to.be.true;
+
+                    // check that the smtp client was called with the right stuff
+                    expect(smtpClientStub.connect.callCount).to.equal(1);
+                    expect(smtpClientStub.useEnvelope.withArgs(mockEnvelope).callCount).to.equal(1);
+                    expect(smtpClientStub.end.callCount).to.equal(0);
+                    expect(smtpClientStub.quit.callCount).to.equal(1);
+
+                    done();
+                };
+
+                // queue the mail & execute test
+                mailer.send({
+                    mail: mockMail,
+                    encrypt: true,
+                    publicKeysArmored: mockKeys,
+                    cleartextMessage: mockCtMsg
+                }, cb);
+
+                // fire event in the order smtpClient would
+                smtpClientStub.onidle();
+                smtpClientStub.onready('Failed recipients!');
+            });
+
+            it('should should fail due to unsucessful ondone in smtp client', function(done) {
+                var cb, mockMail, mockKeys, mockCtMsg, mockEnvelope, mockCompiledMail;
+
+                mockMail = {};
+                mockKeys = ['publicA', 'publicB', 'publicC', 'publicD', 'publicE'];
+                mockCtMsg = 'hello!';
+                mockEnvelope = {};
+                mockCompiledMail = {};
+
+                builderMock.encrypt.yields();
+                builderMock.buildEncrypted.yields(null, mockCompiledMail, mockEnvelope);
+
+                cb = function(err) {
+                    expect(err).to.exist;
+
+                    // check that the mailbuilder has built a clear text and a pgp mail and compiled the pgp mail
+                    expect(builderMock.encrypt.calledOnce).to.be.true;
+                    expect(builderMock.buildEncrypted.calledOnce).to.be.true;
+
+                    // check that the smtp client was called with the right stuff
+                    expect(smtpClientStub.connect.callCount).to.equal(1);
+                    expect(smtpClientStub.useEnvelope.withArgs(mockEnvelope).callCount).to.equal(1);
+                    expect(smtpClientStub.end.withArgs(mockCompiledMail).callCount).to.equal(1);
+                    expect(smtpClientStub.quit.callCount).to.equal(1);
+
+                    done();
+                };
+
+                // queue the mail & execute test
+                mailer.send({
+                    mail: mockMail,
+                    encrypt: true,
+                    publicKeysArmored: mockKeys,
+                    cleartextMessage: mockCtMsg
+                }, cb);
+
+                // fire event in the order smtpClient would
+                smtpClientStub.onidle();
+                smtpClientStub.onready();
+                smtpClientStub.ondone(false);
+            });
+
+            it('should encrypt and send an message with attachments', function(done) {
+                var cb, mockMail, mockKeys, mockCtMsg, mockEnvelope, mockCompiledMail;
+
+                mockMail = {};
+                mockKeys = ['publicA', 'publicB', 'publicC', 'publicD', 'publicE'];
+                mockCtMsg = 'hello!';
+                mockEnvelope = {};
+                mockCompiledMail = {};
+
+                builderMock.encrypt.yields();
+                builderMock.buildEncrypted.yields(null, mockCompiledMail, mockEnvelope);
+
+                cb = function(err) {
+                    expect(err).to.not.exist;
+
+                    // check that the mailbuilder has built a clear text and a pgp mail and compiled the pgp mail
+                    expect(builderMock.encrypt.calledOnce).to.be.true;
+                    expect(builderMock.buildEncrypted.calledOnce).to.be.true;
+
+                    // check that the smtp client was called with the right stuff
+                    expect(smtpClientStub.connect.callCount).to.equal(1);
+                    expect(smtpClientStub.useEnvelope.withArgs(mockEnvelope).callCount).to.equal(1);
+                    expect(smtpClientStub.end.withArgs(mockCompiledMail).callCount).to.equal(1);
+                    expect(smtpClientStub.quit.callCount).to.equal(1);
+
+                    done();
+                };
+
+                // queue the mail & execute test
+                mailer.send({
+                    mail: mockMail,
+                    encrypt: true,
+                    publicKeysArmored: mockKeys,
+                    cleartextMessage: mockCtMsg
+                }, cb);
+
+                // fire event in the order smtpClient would
+                smtpClientStub.onidle();
+                smtpClientStub.onready();
+                smtpClientStub.ondone(true);
+                smtpClientStub.onclose();
             });
 
             it('should send a previously encrypted message with attachments', function(done) {
@@ -140,13 +239,8 @@ define(function(require) {
                 mockEnvelope = {};
                 mockCompiledMail = {};
 
-                smtpMock.once.withArgs('idle').yields();
-                smtpMock.on.withArgs('idle').yieldsAsync();
-                smtpMock.on.withArgs('message').yields();
-                smtpMock.on.withArgs('ready').yields();
-
-                builderMock.encrypt.yieldsAsync();
-                builderMock.buildEncrypted.yieldsAsync(null, mockCompiledMail, mockEnvelope);
+                builderMock.encrypt.yields();
+                builderMock.buildEncrypted.yields(null, mockCompiledMail, mockEnvelope);
 
                 cb = function(err) {
                     expect(err).to.not.exist;
@@ -156,19 +250,10 @@ define(function(require) {
                     expect(builderMock.buildEncrypted.calledOnce).to.be.true;
 
                     // check that the smtp client was called with the right stuff
-                    expect(connectStub.calledOnce).to.be.true;
-                    expect(connectStub.calledWith(opts.port, opts.host, opts)).to.be.true;
-                    expect(smtpMock.useEnvelope.calledOnce).to.be.true;
-                    expect(smtpMock.useEnvelope.calledWith(mockEnvelope)).to.be.true;
-                    expect(smtpMock.end.calledOnce).to.be.true;
-                    expect(smtpMock.end.calledWith(mockCompiledMail)).to.be.true;
-                    expect(smtpMock.on.callCount).to.equal(5);
-                    expect(smtpMock.once.calledWith('idle')).to.be.true;
-                    expect(smtpMock.on.calledWith('idle')).to.be.true;
-                    expect(smtpMock.on.calledWith('error')).to.be.true;
-                    expect(smtpMock.on.calledWith('message')).to.be.true;
-                    expect(smtpMock.on.calledWith('rcptFailed')).to.be.true;
-                    expect(smtpMock.on.calledWith('ready')).to.be.true;
+                    expect(smtpClientStub.connect.callCount).to.equal(1);
+                    expect(smtpClientStub.useEnvelope.withArgs(mockEnvelope).callCount).to.equal(1);
+                    expect(smtpClientStub.end.withArgs(mockCompiledMail).callCount).to.equal(1);
+                    expect(smtpClientStub.quit.callCount).to.equal(1);
 
                     done();
                 };
@@ -180,6 +265,12 @@ define(function(require) {
                     publicKeysArmored: mockKeys,
                     cleartextMessage: mockCtMsg
                 }, cb);
+
+                // fire event in the order smtpClient would
+                smtpClientStub.onidle();
+                smtpClientStub.onready();
+                smtpClientStub.ondone(true);
+                smtpClientStub.onclose();
             });
 
             it('should not send due to build error', function(done) {
@@ -195,8 +286,8 @@ define(function(require) {
                 cb = function(err) {
                     expect(err).to.exist;
 
-                    expect(connectStub.called).to.be.false;
-                    
+                    expect(smtpClientStub.connect.called).to.be.false;
+
                     expect(builderMock.encrypt.calledOnce).to.be.true;
                     expect(builderMock.buildEncrypted.calledOnce).to.be.true;
 
@@ -223,7 +314,7 @@ define(function(require) {
                 cb = function(err) {
                     expect(err).to.exist;
 
-                    expect(connectStub.called).to.be.false;
+                    expect(smtpClientStub.connect.called).to.be.false;
 
                     expect(builderMock.encrypt.calledOnce).to.be.true;
                     expect(builderMock.buildEncrypted.called).to.be.false;
@@ -254,30 +345,16 @@ define(function(require) {
                 mockEnvelope = {};
                 mockCompiledMail = {};
 
-                smtpMock.once.withArgs('idle').yields();
-                smtpMock.on.withArgs('idle').yieldsAsync();
-                smtpMock.on.withArgs('message').yields();
-                smtpMock.on.withArgs('ready').yields();
-
-                builderMock.buildSigned.yieldsAsync(null, mockCompiledMail, mockEnvelope);
+                builderMock.buildSigned.yields(null, mockCompiledMail, mockEnvelope);
 
                 cb = function(err) {
                     expect(err).to.not.exist;
 
                     // check that the smtp client was called with the right stuff
-                    expect(connectStub.calledOnce).to.be.true;
-                    expect(connectStub.calledWith(opts.port, opts.host, opts)).to.be.true;
-                    expect(smtpMock.useEnvelope.calledOnce).to.be.true;
-                    expect(smtpMock.useEnvelope.calledWith(mockEnvelope)).to.be.true;
-                    expect(smtpMock.end.calledOnce).to.be.true;
-                    expect(smtpMock.end.calledWith(mockCompiledMail)).to.be.true;
-                    expect(smtpMock.on.callCount).to.equal(5);
-                    expect(smtpMock.once.calledWith('idle')).to.be.true;
-                    expect(smtpMock.on.calledWith('idle')).to.be.true;
-                    expect(smtpMock.on.calledWith('error')).to.be.true;
-                    expect(smtpMock.on.calledWith('message')).to.be.true;
-                    expect(smtpMock.on.calledWith('rcptFailed')).to.be.true;
-                    expect(smtpMock.on.calledWith('ready')).to.be.true;
+                    expect(smtpClientStub.connect.callCount).to.equal(1);
+                    expect(smtpClientStub.useEnvelope.withArgs(mockEnvelope).callCount).to.equal(1);
+                    expect(smtpClientStub.end.withArgs(mockCompiledMail).callCount).to.equal(1);
+                    expect(smtpClientStub.quit.callCount).to.equal(1);
 
                     // check that the mailbuilder has built a clear text and a pgp mail and compiled the pgp mail
                     expect(builderMock.buildSigned.calledOnce).to.be.true;
@@ -292,6 +369,12 @@ define(function(require) {
                     publicKeysArmored: mockKeys,
                     cleartextMessage: mockCtMsg
                 }, cb);
+
+                // fire event in the order smtpClient would
+                smtpClientStub.onidle();
+                smtpClientStub.onready();
+                smtpClientStub.ondone(true);
+                smtpClientStub.onclose();
             });
         });
 
