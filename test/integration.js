@@ -79,7 +79,7 @@ define(function(require) {
                 port: 465,
                 auth: {
                     user: 'safewithme.testuser@gmail.com',
-                    pass: 'hellosafe'
+                    pass: 'hellosafer'
                 },
                 secureConnection: true,
                 tls: {

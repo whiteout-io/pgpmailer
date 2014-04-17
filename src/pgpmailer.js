@@ -26,7 +26,13 @@ define(function(require) {
         this._pgpbuilder = new PgpBuilder(options);
         this._smtpClient = new SmtpClient(options.host, options.port, {
             useSSL: options.secureConnection,
-            ca: options.tls.ca
+            ca: options.tls.ca,
+            authMethod: (options.auth.xoauth2) ? 'XOAUTH2' : 'PLAIN',
+            auth: {
+                user: options.auth.user,
+                pass: options.auth.pass,
+                token: options.auth.xoauth2
+            }
         });
     };
 
