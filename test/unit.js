@@ -32,7 +32,7 @@ define(function(require) {
 
             mailer = new PgpMailer(opts);
             mailer._pgpbuilder = builderMock = sinon.createStubInstance(PgpBuilder);
-            mailer._smtpClient = smtpClientStub = sinon.createStubInstance(SmtpClient);
+            smtpClientStub = sinon.createStubInstance(SmtpClient);
         });
 
         afterEach(function() {});
@@ -95,7 +95,8 @@ define(function(require) {
                     mail: mockMail,
                     encrypt: true,
                     publicKeysArmored: mockKeys,
-                    cleartextMessage: mockCtMsg
+                    cleartextMessage: mockCtMsg,
+                    smtpclient: smtpClientStub
                 }, cb);
 
                 // fire event in the order smtpClient would
@@ -135,7 +136,8 @@ define(function(require) {
                     mail: mockMail,
                     encrypt: true,
                     publicKeysArmored: mockKeys,
-                    cleartextMessage: mockCtMsg
+                    cleartextMessage: mockCtMsg,
+                    smtpclient: smtpClientStub
                 }, cb);
 
                 // fire event in the order smtpClient would
@@ -176,7 +178,8 @@ define(function(require) {
                     mail: mockMail,
                     encrypt: true,
                     publicKeysArmored: mockKeys,
-                    cleartextMessage: mockCtMsg
+                    cleartextMessage: mockCtMsg,
+                    smtpclient: smtpClientStub
                 }, cb);
 
                 // fire event in the order smtpClient would
@@ -218,7 +221,8 @@ define(function(require) {
                     mail: mockMail,
                     encrypt: true,
                     publicKeysArmored: mockKeys,
-                    cleartextMessage: mockCtMsg
+                    cleartextMessage: mockCtMsg,
+                    smtpclient: smtpClientStub
                 }, cb);
 
                 // fire event in the order smtpClient would
@@ -263,7 +267,8 @@ define(function(require) {
                     mail: mockMail,
                     encrypt: true,
                     publicKeysArmored: mockKeys,
-                    cleartextMessage: mockCtMsg
+                    cleartextMessage: mockCtMsg,
+                    smtpclient: smtpClientStub
                 }, cb);
 
                 // fire event in the order smtpClient would
@@ -298,7 +303,8 @@ define(function(require) {
                     mail: mockMail,
                     encrypt: true,
                     publicKeysArmored: mockKeys,
-                    cleartextMessage: mockCtMsg
+                    cleartextMessage: mockCtMsg,
+                    smtpclient: smtpClientStub
                 }, cb);
             });
 
@@ -326,7 +332,8 @@ define(function(require) {
                     mail: mockMail,
                     encrypt: true,
                     publicKeysArmored: mockKeys,
-                    cleartextMessage: mockCtMsg
+                    cleartextMessage: mockCtMsg,
+                    smtpclient: smtpClientStub
                 }, cb);
             });
         });
@@ -367,7 +374,8 @@ define(function(require) {
                     mail: mockMail,
                     encrypt: false,
                     publicKeysArmored: mockKeys,
-                    cleartextMessage: mockCtMsg
+                    cleartextMessage: mockCtMsg,
+                    smtpclient: smtpClientStub
                 }, cb);
 
                 // fire event in the order smtpClient would

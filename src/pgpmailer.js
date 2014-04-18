@@ -24,16 +24,6 @@ define(function(require) {
     PgpMailer = function(options) {
         this._options = options;
         this._pgpbuilder = new PgpBuilder(options);
-        this._smtpClient = new SmtpClient(options.host, options.port, {
-            useSSL: options.secureConnection,
-            ca: options.tls.ca,
-            authMethod: (options.auth.xoauth2) ? 'XOAUTH2' : 'PLAIN',
-            auth: {
-                user: options.auth.user,
-                pass: options.auth.pass,
-                token: options.auth.xoauth2
-            }
-        });
     };
 
     /**
@@ -89,18 +79,28 @@ define(function(require) {
                 return;
             }
 
-            self._smtpClient.onerror = callback;
+            var smtp = options.smtpclient || new SmtpClient(self._options.host, self._options.port, {
+                useSSL: self._options.secureConnection,
+                ca: self._options.tls.ca,
+                authMethod: (self._options.auth.xoauth2) ? 'XOAUTH2' : 'PLAIN',
+                auth: {
+                    user: self._options.auth.user,
+                    pass: self._options.auth.pass,
+                    token: self._options.auth.xoauth2
+                }
+            });
 
-            self._smtpClient.onidle = function() {
+            smtp.onerror = callback;
+            smtp.onidle = function() {
                 // remove idle listener to prevent infinite loop
-                self._smtpClient.onidle = function() {};
+                smtp.onidle = function() {};
                 // send envelope
-                self._smtpClient.useEnvelope(envelope);
+                smtp.useEnvelope(envelope);
             };
 
-            self._smtpClient.onready = function(failedRecipients) {
-                if (failedRecipients) {
-                    self._smtpClient.quit();
+            smtp.onready = function(failedRecipients) {
+                if (failedRecipients && failedRecipients.length > 0) {
+                    smtp.quit();
                     callback({
                         errMsg: 'Failed recipients: ' + JSON.stringify(failedRecipients)
                     });
@@ -108,33 +108,29 @@ define(function(require) {
                 }
 
                 // send rfc body
-                self._smtpClient.end(rfc);
+                smtp.end(rfc);
             };
 
-            self._smtpClient.ondone = function(success) {
+            smtp.ondone = function(success) {
                 if (!success) {
-                    self._smtpClient.quit();
+                    smtp.quit();
                     callback({
                         errMsg: 'Sent message was not queued successfully by SMTP server!'
                     });
                     return;
                 }
 
-                self._smtpClient.onclose = callback;
-                self._smtpClient.quit();
+                smtp.onclose = callback;
+                smtp.quit();
             };
 
             // connect and wait for idle
-            self._smtpClient.connect();
+            smtp.connect();
         }
     };
 
     PgpMailer.prototype.encrypt = function(options, callback) {
         this._pgpbuilder.encrypt(options, callback);
-    };
-
-    PgpMailer.prototype.reEncrypt = function(options, callback) {
-        this._pgpbuilder.reEncrypt(options, callback);
     };
 
     return PgpMailer;

@@ -27,8 +27,6 @@
   },
   "devDependencies": {
     "openpgp": "~0.5.1",
-    "simplesmtp": "https://github.com/whiteout-io/simplesmtp/tarball/v0.4.0",
-    "mailparser": "https://github.com/whiteout-io/mailparser/tarball/amd",
     "chai": "~1.8.1",
     "grunt": "0.4.1",
     "grunt-contrib-connect": "~0.6.0",
@@ -39,7 +37,8 @@
     "requirejs": "~2.1.10",
     "sinon": "~1.7.3",
     "sinon-chai": "~2.5.0",
-    "arraybuffer-slice": "0.0.2"
+    "arraybuffer-slice": "0.0.2",
+    "mailparser": "^0.4.2"
   },
   "keywords": [
     "e-mail",
