@@ -109,44 +109,37 @@ define(function(require) {
                     expect(err).to.not.exist;
 
                     mailsSent++;
-                    if (mailsSent === 2) {
+                    if (mailsSent === 4) {
                         done();
                     }
                 }
 
-                mailer.send({
-                    mail: {
-                        from: ['safewithme.testuser@gmail.com'],
-                        to: ['safewithme.testuser@gmail.com'],
-                        subject: 'hello, pgp! pt 1',
-                        body: 'helloooooooo.',
-                        attachments: [{
-                            mimeType: 'text/plain',
-                            filename: 'foobar.txt',
-                            content: asciiToUInt8Array('I AM THE MIGHTY ATTACHMENT!')
-                        }]
-                    },
-                    encrypt: true,
-                    publicKeysArmored: publicKeysArmored,
-                    cleartextMessage: cleartextMessage
-                }, onSent);
+                var mailObj = {
+                    from: [{
+                        name: 'the safewithme testuser',
+                        address: 'safewithme.testuser@gmail.com'
+                    }],
+                    to: [{
+                        name: 'the safewithme testuser',
+                        address: 'safewithme.testuser@gmail.com'
+                    }],
+                    subject: 'hello, pgp! pt 1',
+                    body: 'helloooooooo.',
+                    attachments: [{
+                        mimeType: 'text/plain',
+                        filename: 'foobar.txt',
+                        content: asciiToUInt8Array('I AM THE MIGHTY ATTACHMENT!')
+                    }]
+                };
 
-                mailer.send({
-                    mail: {
-                        from: ['safewithme.testuser@gmail.com'],
-                        to: ['safewithme.testuser@gmail.com'],
-                        subject: 'hello, pgp! pt 2',
-                        body: 'hi there!',
-                        attachments: [{
-                            mimeType: 'text/plain',
-                            filename: 'foobar.txt',
-                            content: asciiToUInt8Array('I AM THE MIGHTY ATTACHMENT!')
-                        }]
-                    },
-                    encrypt: true,
-                    publicKeysArmored: publicKeysArmored,
-                    cleartextMessage: cleartextMessage
-                }, onSent);
+                for (var i = 4; i >= 0; i--) {
+                    mailer.send({
+                        mail: mailObj,
+                        encrypt: true,
+                        publicKeysArmored: publicKeysArmored,
+                        cleartextMessage: cleartextMessage
+                    }, onSent);
+                }
             }
         });
     });
