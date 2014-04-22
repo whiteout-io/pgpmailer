@@ -22,12 +22,6 @@ module.exports = function(grunt) {
                     reporter: 'spec'
                 },
                 src: ['test/integration.js']
-            },
-            example: {
-                options: {
-                    reporter: 'spec'
-                },
-                src: ['test/example.js']
             }
         },
 
@@ -60,6 +54,5 @@ module.exports = function(grunt) {
     // Tasks
     grunt.registerTask('dev', ['connect:dev']);
     grunt.registerTask('default', ['jshint', 'mochaTest:all', 'mocha_phantomjs:all']);
-    grunt.registerTask('example', ['jshint', 'mochaTest:example']);
     grunt.registerTask('integration', ['jshint', 'mochaTest:integration']);
 };
