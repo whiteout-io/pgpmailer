@@ -30,9 +30,9 @@ define(function(require) {
                 }
             };
 
-            mailer = new PgpMailer(opts);
-            mailer._pgpbuilder = builderMock = sinon.createStubInstance(PgpBuilder);
+            builderMock = sinon.createStubInstance(PgpBuilder);
             smtpClientStub = sinon.createStubInstance(SmtpClient);
+            mailer = new PgpMailer(opts, builderMock);
         });
 
         afterEach(function() {});

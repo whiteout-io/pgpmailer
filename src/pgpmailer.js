@@ -21,9 +21,9 @@ define(function(require) {
      * @param {String} options.tls Further optional object for tls.connect, e.g. { ca: 'PIN YOUR CA HERE' }
      * @param {String} options.onError Top-level error handler with information if an error occurred
      */
-    PgpMailer = function(options) {
+    PgpMailer = function(options, builder) {
         this._options = options;
-        this._pgpbuilder = new PgpBuilder(options);
+        this._pgpbuilder = builder || new PgpBuilder(options);
     };
 
     /**
