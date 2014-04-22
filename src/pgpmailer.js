@@ -82,12 +82,7 @@ define(function(require) {
             var smtp = options.smtpclient || new SmtpClient(self._options.host, self._options.port, {
                 useSSL: self._options.secureConnection,
                 ca: self._options.tls.ca,
-                authMethod: (self._options.auth.xoauth2) ? 'XOAUTH2' : 'PLAIN',
-                auth: {
-                    user: self._options.auth.user,
-                    pass: self._options.auth.pass,
-                    token: self._options.auth.xoauth2
-                }
+                auth: self._options.auth
             });
 
             smtp.onerror = callback;
