@@ -23,7 +23,7 @@
   },
   "dependencies": {
     "pgpbuilder": "https://github.com/whiteout-io/pgpbuilder/tarball/v0.2.1",
-    "smtpclient": "https://github.com/whiteout-io/smtpclient/tarball/v0.3.0"
+    "smtpclient": "https://github.com/whiteout-io/smtpclient/tarball/v0.3.1"
   },
   "devDependencies": {
     "openpgp": "~0.5.1",

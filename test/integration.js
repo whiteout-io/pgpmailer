@@ -103,17 +103,6 @@ define(function(require) {
             });
 
             function send() {
-                var mailsSent = 0;
-
-                function onSent(err) {
-                    expect(err).to.not.exist;
-
-                    mailsSent++;
-                    if (mailsSent === 4) {
-                        done();
-                    }
-                }
-
                 var mailObj = {
                     from: [{
                         name: 'the safewithme testuser',
@@ -132,14 +121,15 @@ define(function(require) {
                     }]
                 };
 
-                for (var i = 6; i >= 0; i--) {
-                    mailer.send({
-                        mail: mailObj,
-                        encrypt: true,
-                        publicKeysArmored: publicKeysArmored,
-                        cleartextMessage: cleartextMessage
-                    }, onSent);
-                }
+                mailer.send({
+                    mail: mailObj,
+                    encrypt: true,
+                    publicKeysArmored: publicKeysArmored,
+                    cleartextMessage: cleartextMessage
+                }, function(err) {
+                    expect(err).to.not.exist;
+                    done();
+                });
             }
         });
     });
