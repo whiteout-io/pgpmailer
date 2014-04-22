@@ -120,8 +120,12 @@ define(function(require) {
                     return;
                 }
 
-                smtp.onclose = callback;
+                // in some cases node.net throws an exception when we quit() the smtp client,
+                // but the mail was already sent successfully, so we can ignore this error safely
+                smtp.onerror = console.error;
                 smtp.quit();
+
+                callback();
             };
 
             // connect and wait for idle

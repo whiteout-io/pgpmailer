@@ -14,7 +14,7 @@ define(function(require) {
     chai.Assertion.includeStack = true;
 
     describe('integration test', function() {
-        it('should send two messages', function(done) {
+        it('should send messages', function(done) {
             this.timeout(60000);
 
             var privKeyArmored = '-----BEGIN PGP PRIVATE KEY BLOCK-----\r\n' +
@@ -123,7 +123,7 @@ define(function(require) {
                         name: 'the safewithme testuser',
                         address: 'safewithme.testuser@gmail.com'
                     }],
-                    subject: 'hello, pgp! pt 1',
+                    subject: 'hello, pgp!',
                     body: 'helloooooooo.',
                     attachments: [{
                         mimeType: 'text/plain',
@@ -132,7 +132,7 @@ define(function(require) {
                     }]
                 };
 
-                for (var i = 4; i >= 0; i--) {
+                for (var i = 6; i >= 0; i--) {
                     mailer.send({
                         mail: mailObj,
                         encrypt: true,

@@ -135,11 +135,14 @@ define(function(require) {
                 body = 'hello, world!';
                 mail = {
                     from: [{
+                        name: 'üöäßœøåç',
                         address: 'a@a.io'
                     }],
                     to: [{
+                        name: 'foo',
                         address: 'b@b.io'
                     }, {
+                        name: 'bar',
                         address: 'c@c.io'
                     }],
                     subject: 'foobar',
