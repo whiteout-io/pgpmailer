@@ -6,11 +6,10 @@
 
 ## PGP/MIME in the browser?! Yes.
 
-Thanks to all those who made this possible! This module orchestrates the following libraries to send PGP-encrypted messages:
+This module orchestrates the following libraries to send PGP-encrypted messages:
 * [OpenPGP.js](http://openpgpjs.org/)
-* [simplesmtp](https://github.com/andris9/simplesmtp)
-* [mailbuilder](https://github.com/whiteout-io/mailbuilder)
-* [node-shims](https://github.com/whiteout-io/node-shims)
+* [smtpclient](https://github.com/whiteout-io/smtp-client)
+* [pgpbuilder](https://github.com/whiteout-io/pgpbuilder)
 
 ## What can this library do?
 
@@ -41,7 +40,7 @@ An html-mail is nested even further
     |___application/octet/stream
     |___application/octet/stream
 
-**NB! text/html is not yet supported, but we're working hard to make it happen**
+**NB! text/html is not yet supported, but we're working hard to make it happen. Also, PRs are welcome :)**
 
 This lib takes your mail object, creates the MIME-tree, signs and encrypts it, and build a PGP/MIME message that looks like this:
 
@@ -51,11 +50,7 @@ This lib takes your mail object, creates the MIME-tree, signs and encrypts it, a
 
 ## How do I use this?
 
-Have a look at the example file, enter your credentials and keys and then
-
-    grunt example
-
-Here's what you do in you own app
+Here's what you do in you own app (and/or have a look at the `test/integration.js` test)
 
     var PgpMailer = require('pgpmailer');
     var pgpmailer = new PgpMailer({
@@ -80,12 +75,20 @@ Here's what you do in you own app
     });
 
     // execute this after pgpmailer.setPrivateKey invoked its callback and the private key is set
-    var publicKeysArmored = ['ASCII ARMORED PUBLIC KEY OF THE SENDER', 'RECEIVER KEY', 'ANOTHER RECEIVER KEY', 'COPY RECEIVER KEY', 'BLINDCOPY RECEIVER KEY'];
+    var publicKeysArmored = ['ASCII ARMORED PUBLIC KEY OF THE SENDER', 'RECEIVER KEY', 'COPY RECEIVER KEY', 'BLINDCOPY RECEIVER KEY'];
     var mail = {
-        from: ['sender@foobar.com'],
-        to: ['recipient@foobar.com', 'another_recipient@foobar.com'],
-        cc: ['receive.a.copy@foobar.com'],
-        bcc: ['blindcopy@foobar.com'],
+        from: [{
+            name: 'Foo Bar',
+            address: 'sender@foobar.com'
+        }],
+        to: [{
+            name: 'Foo Bar',
+            address: 'recipient@foobar.com'
+        }],
+        cc: [{
+            name: 'Foo Bar',
+            address: 'receive.a.copy@foobar.com'
+        }],
         subject: 'hello, pgp',
         body: 'hello, world!',
         attachments: [{

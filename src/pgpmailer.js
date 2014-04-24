@@ -8,7 +8,7 @@ if (typeof module === 'object' && typeof define !== 'function') {
 
 define(function(require) {
     var PgpBuilder = require('pgpbuilder'),
-        simplesmtp = require('simplesmtp'),
+        SmtpClient = require('smtpclient'),
         PgpMailer;
 
     /**
@@ -21,9 +21,9 @@ define(function(require) {
      * @param {String} options.tls Further optional object for tls.connect, e.g. { ca: 'PIN YOUR CA HERE' }
      * @param {String} options.onError Top-level error handler with information if an error occurred
      */
-    PgpMailer = function(options, pgpbuilder) {
+    PgpMailer = function(options, builder) {
         this._options = options;
-        this._pgpbuilder = pgpbuilder || new PgpBuilder(options);
+        this._pgpbuilder = builder || new PgpBuilder(options);
     };
 
     /**
@@ -79,32 +79,57 @@ define(function(require) {
                 return;
             }
 
-            var smtp = simplesmtp.connect(self._options.port, self._options.host, self._options);
+            var smtp = options.smtpclient || new SmtpClient(self._options.host, self._options.port, {
+                useSSL: self._options.secureConnection,
+                ca: self._options.tls.ca,
+                auth: self._options.auth
+            });
 
-            smtp.on('error', callback);
-            smtp.on('rcptFailed', callback);
-
-            smtp.once('idle', function() {
+            smtp.onerror = callback;
+            smtp.onidle = function() {
+                // remove idle listener to prevent infinite loop
+                smtp.onidle = function() {};
+                // send envelope
                 smtp.useEnvelope(envelope);
-            });
+            };
 
-            smtp.on('message', function() {
-                smtp.on('idle', smtp.quit);
+            smtp.onready = function(failedRecipients) {
+                if (failedRecipients && failedRecipients.length > 0) {
+                    smtp.quit();
+                    callback({
+                        errMsg: 'Failed recipients: ' + JSON.stringify(failedRecipients)
+                    });
+                    return;
+                }
+
+                // send rfc body
                 smtp.end(rfc);
-            });
+            };
 
-            smtp.on('ready', function() {
+            smtp.ondone = function(success) {
+                if (!success) {
+                    smtp.quit();
+                    callback({
+                        errMsg: 'Sent message was not queued successfully by SMTP server!'
+                    });
+                    return;
+                }
+
+                // in some cases node.net throws an exception when we quit() the smtp client,
+                // but the mail was already sent successfully, so we can ignore this error safely
+                smtp.onerror = console.error;
+                smtp.quit();
+
                 callback();
-            });
+            };
+
+            // connect and wait for idle
+            smtp.connect();
         }
     };
 
     PgpMailer.prototype.encrypt = function(options, callback) {
         this._pgpbuilder.encrypt(options, callback);
-    };
-
-    PgpMailer.prototype.reEncrypt = function(options, callback) {
-        this._pgpbuilder.reEncrypt(options, callback);
     };
 
     return PgpMailer;

@@ -11,30 +11,20 @@ define(function(require) {
         chai = require('chai'),
         expect = chai.expect,
         PgpMailer = require('../src/pgpmailer'),
-        simplesmtp = require('simplesmtp'),
+        SmtpClient = require('smtpclient'),
         openpgp = require('openpgp'),
         MailParser = require('mailparser').MailParser;
 
-    chai.Assertion.includeStack = true;
-
-    var SmtpContructorMock = function() {};
-    SmtpContructorMock.prototype.on = function() {};
-    SmtpContructorMock.prototype.once = function() {};
-    SmtpContructorMock.prototype.removeAllListeners = function() {};
-    SmtpContructorMock.prototype.useEnvelope = function() {};
-    SmtpContructorMock.prototype.end = function() {};
-    SmtpContructorMock.prototype.quite = function() {};
-
     describe('local integration tests', function() {
+        this.timeout(10000);
+        chai.Assertion.includeStack = true;
+
         var mailer, smtpMock, pubkeyArmored;
 
         beforeEach(function(done) {
-            var opts, privKey, connectStub;
+            var opts, privKey;
 
-            smtpMock = sinon.createStubInstance(SmtpContructorMock);
-            connectStub = sinon.stub(simplesmtp, 'connect', function() {
-                return smtpMock;
-            });
+            smtpMock = sinon.createStubInstance(SmtpClient);
 
             opts = {
                 host: 'hello.world.com',
@@ -116,10 +106,6 @@ define(function(require) {
             });
         });
 
-        afterEach(function() {
-            simplesmtp.connect.restore();
-        });
-
         describe('send', function() {
             it('should send a message with attachments and decode the output correctly', function(done) {
                 var cb, mail, body, publicKeysArmored, expectedAttachmentPayload, cleartextMessage;
@@ -149,11 +135,14 @@ define(function(require) {
                 body = 'hello, world!';
                 mail = {
                     from: [{
+                        name: 'üöäßœøåç',
                         address: 'a@a.io'
                     }],
                     to: [{
+                        name: 'foo',
                         address: 'b@b.io'
                     }, {
+                        name: 'bar',
                         address: 'c@c.io'
                     }],
                     subject: 'foobar',
@@ -165,47 +154,55 @@ define(function(require) {
                     }]
                 };
 
-                smtpMock.on.withArgs('message').yields();
-                smtpMock.end.withArgs(sinon.match(function(args) {
-                    var sentRFCMessage = args;
+                smtpMock.useEnvelope = function(envelope) {
+                    expect(envelope).to.exist;
+                };
 
+                smtpMock.end = function(sentRFCMessage) {
                     expect(sentRFCMessage).to.contain(cleartextMessage);
 
-                    var pgpPrefix = '-----BEGIN PGP MESSAGE-----';
-                    var pgpSuffix = '-----END PGP MESSAGE-----';
-                    var pgpMessage = pgpPrefix + sentRFCMessage.split(pgpPrefix).pop().split(pgpSuffix).shift() + pgpSuffix;
-
-                    var pgpMessageObj = openpgp.message.readArmored(pgpMessage);
-                    var publicKeyObj = openpgp.key.readArmored(pubkeyArmored).keys[0];
-
-                    var decrypted = openpgp.decryptAndVerifyMessage(mailer._pgpbuilder._privateKey, [publicKeyObj], pgpMessageObj);
-                    expect(decrypted).to.exist;
-                    expect(decrypted.signatures[0].valid).to.be.true;
-                    expect(decrypted.text).to.exist;
 
                     var parser = new MailParser();
                     parser.on('end', function(parsedMail) {
-                        expect(parsedMail).to.exist;
-                        expect(parsedMail.text.replace(/\n/g, '')).to.equal(body);
-                        var attachmentBinStr = parsedMail.attachments[0].content.toString('binary');
-                        var attachmentPayload = asciiToUInt8Array(attachmentBinStr);
-                        expect(attachmentPayload.length).to.equal(expectedAttachmentPayload.length);
-                        expect(attachmentPayload).to.deep.equal(expectedAttachmentPayload);
+                        var ct = parsedMail.attachments.filter(function(attmt) {
+                            return attmt.fileName === 'encrypted.asc';
+                        })[0].content.toString('binary');
 
-                        done();
+                        var pgpMessageObj = openpgp.message.readArmored(ct);
+                        var publicKeyObj = openpgp.key.readArmored(pubkeyArmored).keys[0];
+
+                        var decrypted = openpgp.decryptAndVerifyMessage(mailer._pgpbuilder._privateKey, [publicKeyObj], pgpMessageObj);
+                        expect(decrypted).to.exist;
+                        expect(decrypted.signatures[0].valid).to.be.true;
+                        expect(decrypted.text).to.exist;
+
+                        parser = new MailParser();
+                        parser.on('end', function(parsedMail) {
+                            expect(parsedMail).to.exist;
+                            expect(parsedMail.text.replace(/\n/g, '')).to.equal(body);
+                            var attachmentBinStr = parsedMail.attachments[0].content.toString('binary');
+                            var attachmentPayload = asciiToUInt8Array(attachmentBinStr);
+                            expect(attachmentPayload.length).to.equal(expectedAttachmentPayload.length);
+                            expect(attachmentPayload).to.deep.equal(expectedAttachmentPayload);
+
+                            done();
+                        });
+                        parser.end(decrypted.text);
                     });
-                    parser.end(decrypted.text);
-
-                    return true;
-                }));
+                    parser.end(sentRFCMessage);
+                };
 
                 // send the mail
                 mailer.send({
                     mail: mail,
                     encrypt: true,
                     publicKeysArmored: publicKeysArmored,
-                    cleartextMessage: cleartextMessage
+                    cleartextMessage: cleartextMessage,
+                    smtpclient: smtpMock
                 }, cb);
+
+                smtpMock.onidle();
+                smtpMock.onready();
             });
         });
     });

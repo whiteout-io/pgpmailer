@@ -22,12 +22,11 @@
     "test": "grunt"
   },
   "dependencies": {
-    "pgpbuilder": "https://github.com/whiteout-io/pgpbuilder/tarball/v0.1.0",
-    "simplesmtp": "https://github.com/whiteout-io/simplesmtp/tarball/v0.4.0"
+    "pgpbuilder": "https://github.com/whiteout-io/pgpbuilder/tarball/v0.2.1",
+    "smtpclient": "https://github.com/whiteout-io/smtpclient/tarball/v0.3.1"
   },
   "devDependencies": {
-    "openpgp": "~0.4.0",
-    "mailparser": "https://github.com/whiteout-io/mailparser/tarball/amd",
+    "openpgp": "~0.5.1",
     "chai": "~1.8.1",
     "grunt": "0.4.1",
     "grunt-contrib-connect": "~0.6.0",
@@ -37,7 +36,9 @@
     "mocha": "~1.16.2",
     "requirejs": "~2.1.10",
     "sinon": "~1.7.3",
-    "sinon-chai": "~2.5.0"
+    "sinon-chai": "~2.5.0",
+    "arraybuffer-slice": "0.0.2",
+    "mailparser": "^0.4.2"
   },
   "keywords": [
     "e-mail",
