@@ -44,6 +44,7 @@ define(function(require) {
      * @param {Object} options.mail.cc (optional) Array of objects with the ASCII string representing the recipient, see mail.to
      * @param {Object} options.mail.bcc (optional) Array of objects with the ASCII string representing the recipient, see mail.to
      * @param {String} options.mail.subject String containing with the mail's subject
+     * @param {String} options.mail.headers Object custom headers to add to the message header
      * @param {String} options.mail.body Plain text body to be sent with the mail
      * @param {Array} options.mail.attachments (optional) Array of attachment objects with filename {String}, content {Uint8Array}, and mimeType {String}
      * @param {Boolean} options.mail.encrypted Indicating if the mail is already encrypted
