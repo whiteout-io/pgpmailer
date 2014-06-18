@@ -15,6 +15,7 @@ require.config({
         'smtpclient-response-parser': '../node_modules/smtpclient/src/smtpclient-response-parser',
         'tcp-socket': '../node_modules/smtpclient/node_modules/tcp-socket/src/tcp-socket',
         'stringencoding': '../node_modules/smtpclient/node_modules/stringencoding/dist/stringencoding',
+        'axe': '../node_modules/smtpclient/node_modules/axe/axe',
         'openpgp': 'lib/openpgp.min',
         'forge': 'lib/forge.min',
     },
