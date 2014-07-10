@@ -126,8 +126,9 @@ define(function(require) {
                     encrypt: true,
                     publicKeysArmored: publicKeysArmored,
                     cleartextMessage: cleartextMessage
-                }, function(err) {
+                }, function(err, rfcText) {
                     expect(err).to.not.exist;
+                    expect(rfcText).to.exist;
                     done();
                 });
             }

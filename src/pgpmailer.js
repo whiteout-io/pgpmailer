@@ -121,7 +121,7 @@ define(function(require) {
                 smtp.onerror = console.error;
                 smtp.quit();
 
-                callback();
+                callback(null, rfc);
             };
 
             // connect and wait for idle

@@ -114,8 +114,9 @@ define(function(require) {
                 // Setup Fixture
                 //
 
-                cb = function(err) {
+                cb = function(err, rfcText) {
                     expect(err).to.not.exist;
+                    expect(rfcText).to.exist;
                 };
 
                 cleartextMessage = 'yes! this is very secure!';
