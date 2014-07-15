@@ -19,7 +19,6 @@ define(function(require) {
      * @param {String} options.auth.pass Password for login
      * @param {Boolean} options.secureConnection Indicates if the connection is using TLS or not
      * @param {String} options.tls Further optional object for tls.connect, e.g. { ca: 'PIN YOUR CA HERE' }
-     * @param {String} options.onError Top-level error handler with information if an error occurred
      */
     PgpMailer = function(options, builder) {
         this._options = options;
@@ -81,10 +80,12 @@ define(function(require) {
             }
 
             var smtp = options.smtpclient || new SmtpClient(self._options.host, self._options.port, {
-                useSSL: self._options.secureConnection,
-                ca: self._options.tls.ca,
+                useSSL: self._options.secure,
+                ca: self._options.ca,
                 auth: self._options.auth
             });
+
+            smtp.oncert = self.onCert;
 
             smtp.onerror = callback;
             smtp.onidle = function() {

@@ -24,10 +24,8 @@ define(function(require) {
                 host: 'hello.world.com',
                 port: 1337,
                 auth: {},
-                secureConnection: true,
-                tls: {
-                    ca: ['trusty cert']
-                }
+                secure: true,
+                ca: ['trusty cert']
             };
 
             builderMock = sinon.createStubInstance(PgpBuilder);
