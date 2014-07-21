@@ -80,7 +80,7 @@ define(function(require) {
             }
 
             var smtp = options.smtpclient || new SmtpClient(self._options.host, self._options.port, {
-                useSSL: self._options.secure,
+                useSecureTransport: self._options.secure,
                 ca: self._options.ca,
                 auth: self._options.auth
             });
