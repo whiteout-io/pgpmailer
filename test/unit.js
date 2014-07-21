@@ -24,10 +24,8 @@ define(function(require) {
                 host: 'hello.world.com',
                 port: 1337,
                 auth: {},
-                secureConnection: true,
-                tls: {
-                    ca: ['trusty cert']
-                }
+                secure: true,
+                ca: ['trusty cert']
             };
 
             builderMock = sinon.createStubInstance(PgpBuilder);
@@ -74,8 +72,9 @@ define(function(require) {
                 builderMock.encrypt.yields();
                 builderMock.buildEncrypted.yields(null, mockCompiledMail, mockEnvelope);
 
-                cb = function(err) {
+                cb = function(err, rfcText) {
                     expect(err).to.exist;
+                    expect(rfcText).to.not.exist;
 
                     // check that the mailbuilder has built a clear text and a pgp mail and compiled the pgp mail
                     expect(builderMock.encrypt.calledOnce).to.be.true;
@@ -115,8 +114,9 @@ define(function(require) {
                 builderMock.encrypt.yields();
                 builderMock.buildEncrypted.yields(null, mockCompiledMail, mockEnvelope);
 
-                cb = function(err) {
+                cb = function(err, rfcText) {
                     expect(err).to.exist;
+                    expect(rfcText).to.not.exist;
 
                     // check that the mailbuilder has built a clear text and a pgp mail and compiled the pgp mail
                     expect(builderMock.encrypt.calledOnce).to.be.true;
@@ -157,8 +157,9 @@ define(function(require) {
                 builderMock.encrypt.yields();
                 builderMock.buildEncrypted.yields(null, mockCompiledMail, mockEnvelope);
 
-                cb = function(err) {
+                cb = function(err, rfcText) {
                     expect(err).to.exist;
+                    expect(rfcText).to.not.exist;
 
                     // check that the mailbuilder has built a clear text and a pgp mail and compiled the pgp mail
                     expect(builderMock.encrypt.calledOnce).to.be.true;
@@ -200,8 +201,9 @@ define(function(require) {
                 builderMock.encrypt.yields();
                 builderMock.buildEncrypted.yields(null, mockCompiledMail, mockEnvelope);
 
-                cb = function(err) {
+                cb = function(err, rfcText) {
                     expect(err).to.not.exist;
+                    expect(rfcText).to.exist;
 
                     // check that the mailbuilder has built a clear text and a pgp mail and compiled the pgp mail
                     expect(builderMock.encrypt.calledOnce).to.be.true;
@@ -246,8 +248,9 @@ define(function(require) {
                 builderMock.encrypt.yields();
                 builderMock.buildEncrypted.yields(null, mockCompiledMail, mockEnvelope);
 
-                cb = function(err) {
+                cb = function(err, rfcText) {
                     expect(err).to.not.exist;
+                    expect(rfcText).to.exist;
 
                     // check that the mailbuilder has built a clear text and a pgp mail and compiled the pgp mail
                     expect(builderMock.encrypt.called).to.be.false;
@@ -288,8 +291,9 @@ define(function(require) {
                 builderMock.encrypt.yieldsAsync();
                 builderMock.buildEncrypted.yieldsAsync({});
 
-                cb = function(err) {
+                cb = function(err, rfcText) {
                     expect(err).to.exist;
+                    expect(rfcText).to.not.exist;
 
                     expect(smtpClientStub.connect.called).to.be.false;
 
@@ -317,8 +321,9 @@ define(function(require) {
 
                 builderMock.encrypt.yieldsAsync({});
 
-                cb = function(err) {
+                cb = function(err, rfcText) {
                     expect(err).to.exist;
+                    expect(rfcText).to.not.exist;
 
                     expect(smtpClientStub.connect.called).to.be.false;
 
@@ -354,8 +359,9 @@ define(function(require) {
 
                 builderMock.buildSigned.yields(null, mockCompiledMail, mockEnvelope);
 
-                cb = function(err) {
+                cb = function(err, rfcText) {
                     expect(err).to.not.exist;
+                    expect(rfcText).to.exist;
 
                     // check that the smtp client was called with the right stuff
                     expect(smtpClientStub.connect.callCount).to.equal(1);
