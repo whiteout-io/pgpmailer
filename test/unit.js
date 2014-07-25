@@ -12,7 +12,7 @@ define(function(require) {
         expect = chai.expect,
         PgpMailer = require('../src/pgpmailer'),
         PgpBuilder = require('pgpbuilder'),
-        SmtpClient = require('smtpclient');
+        SmtpClient = require('wo-smtpclient');
 
     chai.Assertion.includeStack = true;
 

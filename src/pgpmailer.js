@@ -8,7 +8,7 @@ if (typeof module === 'object' && typeof define !== 'function') {
 
 define(function(require) {
     var PgpBuilder = require('pgpbuilder'),
-        SmtpClient = require('smtpclient'),
+        SmtpClient = require('wo-smtpclient'),
         PgpMailer;
 
     /**

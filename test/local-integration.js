@@ -11,7 +11,7 @@ define(function(require) {
         chai = require('chai'),
         expect = chai.expect,
         PgpMailer = require('../src/pgpmailer'),
-        SmtpClient = require('smtpclient'),
+        SmtpClient = require('wo-smtpclient'),
         openpgp = require('openpgp'),
         MailParser = require('mailparser').MailParser;
 
