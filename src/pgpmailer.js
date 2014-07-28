@@ -1,15 +1,13 @@
 'use strict';
 
-if (typeof module === 'object' && typeof define !== 'function') {
-    var define = function(factory) {
-        module.exports = factory(require, exports, module);
-    };
-}
-
-define(function(require) {
-    var PgpBuilder = require('pgpbuilder'),
-        SmtpClient = require('wo-smtpclient'),
-        PgpMailer;
+(function(factory) {
+    if (typeof define === 'function' && define.amd) {
+        define(['pgpbuilder', 'smtpclient'], factory);
+    } else if (typeof exports === 'object') {
+        module.exports = factory(require('pgpbuilder'), require('wo-smtpclient'));
+    }
+}(function(PgpBuilder, SmtpClient) {
+    var PgpMailer;
 
     /**
      * Constructor for the high level api.
@@ -135,4 +133,4 @@ define(function(require) {
     };
 
     return PgpMailer;
-});
+}));

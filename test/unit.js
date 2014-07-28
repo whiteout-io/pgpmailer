@@ -1,19 +1,13 @@
 'use strict';
 
-if (typeof module === 'object' && typeof define !== 'function') {
-    var define = function(factory) {
-        module.exports = factory(require, exports, module);
-    };
-}
-
-define(function(require) {
-    var sinon = require('sinon'),
-        chai = require('chai'),
-        expect = chai.expect,
-        PgpMailer = require('../src/pgpmailer'),
-        PgpBuilder = require('pgpbuilder'),
-        SmtpClient = require('wo-smtpclient');
-
+(function(factory) {
+    if (typeof define === 'function' && define.amd) {
+        define(['sinon', 'chai', '../src/pgpmailer', 'pgpbuilder', 'smtpclient'], factory);
+    } else if (typeof exports === 'object') {
+        module.exports = factory(require('sinon'), require('chai'), require('../src/pgpmailer'), require('pgpbuilder'), require('wo-smtpclient'));
+    }
+}(function(sinon, chai, PgpMailer, PgpBuilder, SmtpClient) {
+    var expect = chai.expect;
     chai.Assertion.includeStack = true;
 
     describe('unit tests', function() {
@@ -404,4 +398,4 @@ define(function(require) {
         });
 
     });
-});
+}));
