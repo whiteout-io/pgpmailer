@@ -9,7 +9,7 @@
     "type": "git",
     "url": "http://github.com/whiteout-io/pgpmailer.git"
   },
-  "version": "0.3.10",
+  "version": "0.3.11",
   "licenses": [{
     "type": "MIT",
     "url": "http://github.com/whiteout-io/pgpmailer/blob/master/LICENSE"

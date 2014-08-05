@@ -55,7 +55,8 @@
 
         describe('send encrypted', function() {
             it('should should fail due to error in smtp client', function(done) {
-                var cb, mockMail, mockKeys, mockCtMsg, mockEnvelope, mockCompiledMail;
+                var cb, mockMail, mockKeys, mockCtMsg, mockEnvelope, mockCompiledMail,
+                    errCounter = 0;
 
                 mockMail = {};
                 mockKeys = ['publicA', 'publicB', 'publicC', 'publicD', 'publicE'];
@@ -66,8 +67,14 @@
                 builderMock.encrypt.yields();
                 builderMock.buildEncrypted.yields(null, mockCompiledMail, mockEnvelope);
 
+                mailer.onError = function(err) {
+                    expect(err).to.exist;
+                    errCounter++;
+                };
+
                 cb = function(err, rfcText) {
                     expect(err).to.exist;
+                    expect(errCounter).to.equal(1);
                     expect(rfcText).to.not.exist;
 
                     // check that the mailbuilder has built a clear text and a pgp mail and compiled the pgp mail

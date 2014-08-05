@@ -85,7 +85,7 @@
 
             smtp.oncert = self.onCert;
 
-            smtp.onerror = callback;
+            smtp.onerror = done;
             smtp.onidle = function() {
                 // remove idle listener to prevent infinite loop
                 smtp.onidle = function() {};
@@ -96,7 +96,7 @@
             smtp.onready = function(failedRecipients) {
                 if (failedRecipients && failedRecipients.length > 0) {
                     smtp.quit();
-                    callback({
+                    done({
                         errMsg: 'Failed recipients: ' + JSON.stringify(failedRecipients)
                     });
                     return;
@@ -109,7 +109,7 @@
             smtp.ondone = function(success) {
                 if (!success) {
                     smtp.quit();
-                    callback({
+                    done({
                         errMsg: 'Sent message was not queued successfully by SMTP server!'
                     });
                     return;
@@ -120,11 +120,20 @@
                 smtp.onerror = console.error;
                 smtp.quit();
 
-                callback(null, rfc);
+                done(null, rfc);
             };
 
             // connect and wait for idle
             smtp.connect();
+        }
+
+        function done(err, result) {
+            if (err && self.onError) {
+                // invoke optional error handler
+                self.onError(err);
+            }
+
+            callback(err, result);
         }
     };
 
