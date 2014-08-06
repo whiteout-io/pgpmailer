@@ -131,6 +131,7 @@
             if (err && self.onError) {
                 // invoke optional error handler
                 self.onError(err);
+                return;
             }
 
             callback(err, result);

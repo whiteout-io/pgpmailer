@@ -55,8 +55,7 @@
 
         describe('send encrypted', function() {
             it('should should fail due to error in smtp client', function(done) {
-                var cb, mockMail, mockKeys, mockCtMsg, mockEnvelope, mockCompiledMail,
-                    errCounter = 0;
+                var cb, mockMail, mockKeys, mockCtMsg, mockEnvelope, mockCompiledMail;
 
                 mockMail = {};
                 mockKeys = ['publicA', 'publicB', 'publicC', 'publicD', 'publicE'];
@@ -69,13 +68,6 @@
 
                 mailer.onError = function(err) {
                     expect(err).to.exist;
-                    errCounter++;
-                };
-
-                cb = function(err, rfcText) {
-                    expect(err).to.exist;
-                    expect(errCounter).to.equal(1);
-                    expect(rfcText).to.not.exist;
 
                     // check that the mailbuilder has built a clear text and a pgp mail and compiled the pgp mail
                     expect(builderMock.encrypt.calledOnce).to.be.true;
@@ -88,6 +80,12 @@
                     expect(smtpClientStub.quit.callCount).to.equal(0);
 
                     done();
+                };
+
+                cb = function(err, rfcText) {
+                    expect(true).to.be.false; // fail test if callback is called
+                    expect(err).to.exist;
+                    expect(rfcText).to.not.exist;
                 };
 
                 // queue the mail & execute test
