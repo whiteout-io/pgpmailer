@@ -55,12 +55,11 @@
 
         describe('send encrypted', function() {
             it('should should fail due to error in smtp client', function(done) {
-                var cb, mockMail, mockKeys, mockCtMsg, mockEnvelope, mockCompiledMail,
+                var cb, mockMail, mockKeys, mockEnvelope, mockCompiledMail,
                     errCounter = 0;
 
                 mockMail = {};
                 mockKeys = ['publicA', 'publicB', 'publicC', 'publicD', 'publicE'];
-                mockCtMsg = 'hello!';
                 mockEnvelope = {};
                 mockCompiledMail = {};
 
@@ -95,7 +94,6 @@
                     mail: mockMail,
                     encrypt: true,
                     publicKeysArmored: mockKeys,
-                    cleartextMessage: mockCtMsg,
                     smtpclient: smtpClientStub
                 }, cb);
 
@@ -104,11 +102,10 @@
             });
 
             it('should should fail due to failedRecipients in smtp client', function(done) {
-                var cb, mockMail, mockKeys, mockCtMsg, mockEnvelope, mockCompiledMail;
+                var cb, mockMail, mockKeys, mockEnvelope, mockCompiledMail;
 
                 mockMail = {};
                 mockKeys = ['publicA', 'publicB', 'publicC', 'publicD', 'publicE'];
-                mockCtMsg = 'hello!';
                 mockEnvelope = {};
                 mockCompiledMail = {};
 
@@ -137,7 +134,6 @@
                     mail: mockMail,
                     encrypt: true,
                     publicKeysArmored: mockKeys,
-                    cleartextMessage: mockCtMsg,
                     smtpclient: smtpClientStub
                 }, cb);
 
@@ -147,11 +143,10 @@
             });
 
             it('should should fail due to unsucessful ondone in smtp client', function(done) {
-                var cb, mockMail, mockKeys, mockCtMsg, mockEnvelope, mockCompiledMail;
+                var cb, mockMail, mockKeys, mockEnvelope, mockCompiledMail;
 
                 mockMail = {};
                 mockKeys = ['publicA', 'publicB', 'publicC', 'publicD', 'publicE'];
-                mockCtMsg = 'hello!';
                 mockEnvelope = {};
                 mockCompiledMail = {};
 
@@ -180,7 +175,6 @@
                     mail: mockMail,
                     encrypt: true,
                     publicKeysArmored: mockKeys,
-                    cleartextMessage: mockCtMsg,
                     smtpclient: smtpClientStub
                 }, cb);
 
@@ -191,11 +185,10 @@
             });
 
             it('should encrypt and send an message with attachments', function(done) {
-                var cb, mockMail, mockKeys, mockCtMsg, mockEnvelope, mockCompiledMail;
+                var cb, mockMail, mockKeys, mockEnvelope, mockCompiledMail;
 
                 mockMail = {};
                 mockKeys = ['publicA', 'publicB', 'publicC', 'publicD', 'publicE'];
-                mockCtMsg = 'hello!';
                 mockEnvelope = {};
                 mockCompiledMail = {};
 
@@ -224,7 +217,6 @@
                     mail: mockMail,
                     encrypt: true,
                     publicKeysArmored: mockKeys,
-                    cleartextMessage: mockCtMsg,
                     smtpclient: smtpClientStub
                 }, cb);
 
@@ -236,13 +228,12 @@
             });
 
             it('should send a previously encrypted message with attachments', function(done) {
-                var cb, mockMail, mockKeys, mockCtMsg, mockEnvelope, mockCompiledMail;
+                var cb, mockMail, mockKeys, mockEnvelope, mockCompiledMail;
 
                 mockMail = {
                     encrypted: true
                 };
                 mockKeys = ['publicA', 'publicB', 'publicC', 'publicD', 'publicE'];
-                mockCtMsg = 'hello!';
                 mockEnvelope = {};
                 mockCompiledMail = {};
 
@@ -271,7 +262,6 @@
                     mail: mockMail,
                     encrypt: true,
                     publicKeysArmored: mockKeys,
-                    cleartextMessage: mockCtMsg,
                     smtpclient: smtpClientStub
                 }, cb);
 
@@ -283,11 +273,10 @@
             });
 
             it('should not send due to build error', function(done) {
-                var cb, mockMail, mockKeys, mockCtMsg;
+                var cb, mockMail, mockKeys;
 
                 mockMail = {};
                 mockKeys = ['publicA', 'publicB', 'publicC', 'publicD', 'publicE'];
-                mockCtMsg = 'hello!';
 
                 builderMock.encrypt.yieldsAsync();
                 builderMock.buildEncrypted.yieldsAsync({});
@@ -308,17 +297,15 @@
                     mail: mockMail,
                     encrypt: true,
                     publicKeysArmored: mockKeys,
-                    cleartextMessage: mockCtMsg,
                     smtpclient: smtpClientStub
                 }, cb);
             });
 
             it('should not send due to encryption error', function(done) {
-                var cb, mockMail, mockKeys, mockCtMsg;
+                var cb, mockMail, mockKeys;
 
                 mockMail = {};
                 mockKeys = ['publicA', 'publicB', 'publicC', 'publicD', 'publicE'];
-                mockCtMsg = 'hello!';
 
                 builderMock.encrypt.yieldsAsync({});
 
@@ -338,7 +325,6 @@
                     mail: mockMail,
                     encrypt: true,
                     publicKeysArmored: mockKeys,
-                    cleartextMessage: mockCtMsg,
                     smtpclient: smtpClientStub
                 }, cb);
             });
@@ -346,7 +332,7 @@
 
         describe('send signed', function() {
             it('should send a signed message with attachments', function(done) {
-                var cb, mockMail, mockKeys, mockCtMsg, mockEnvelope, mockCompiledMail;
+                var cb, mockMail, mockKeys, mockEnvelope, mockCompiledMail;
 
                 //
                 // Setup Fixture
@@ -354,7 +340,6 @@
 
                 mockMail = {};
                 mockKeys = ['publicA', 'publicB', 'publicC', 'publicD', 'publicE'];
-                mockCtMsg = 'hello!';
                 mockEnvelope = {};
                 mockCompiledMail = {};
 
@@ -381,7 +366,6 @@
                     mail: mockMail,
                     encrypt: false,
                     publicKeysArmored: mockKeys,
-                    cleartextMessage: mockCtMsg,
                     smtpclient: smtpClientStub
                 }, cb);
 

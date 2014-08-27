@@ -45,7 +45,6 @@
      * @param {String} options.mail.body Plain text body to be sent with the mail
      * @param {Array} options.mail.attachments (optional) Array of attachment objects with filename {String}, content {Uint8Array}, and mimeType {String}
      * @param {Boolean} options.mail.encrypted Indicating if the mail is already encrypted
-     * @param {Object} options.cleartextMessage (optional) A clear text message in addition to the encrypted message
      * @param {Array} options.publicKeysArmored The public keys with which the message should be encrypted
      * @param {Function} callback(error) Indicates that the mail has been sent, or gives information in case an error occurred.
      */

@@ -108,7 +108,7 @@ define(function(require) {
 
         describe('send', function() {
             it('should send a message with attachments and decode the output correctly', function(done) {
-                var cb, mail, body, publicKeysArmored, expectedAttachmentPayload, cleartextMessage;
+                var cb, mail, body, publicKeysArmored, expectedAttachmentPayload;
 
                 //
                 // Setup Fixture
@@ -119,7 +119,6 @@ define(function(require) {
                     expect(rfcText).to.exist;
                 };
 
-                cleartextMessage = 'yes! this is very secure!';
                 publicKeysArmored = [pubkeyArmored];
 
                 var size = 1000;
@@ -160,9 +159,6 @@ define(function(require) {
                 };
 
                 smtpMock.end = function(sentRFCMessage) {
-                    expect(sentRFCMessage).to.contain(cleartextMessage);
-
-
                     var parser = new MailParser();
                     parser.on('end', function(parsedMail) {
                         var ct = parsedMail.attachments.filter(function(attmt) {
@@ -198,7 +194,6 @@ define(function(require) {
                     mail: mail,
                     encrypt: true,
                     publicKeysArmored: publicKeysArmored,
-                    cleartextMessage: cleartextMessage,
                     smtpclient: smtpMock
                 }, cb);
 

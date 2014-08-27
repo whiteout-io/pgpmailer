@@ -86,7 +86,6 @@ define(function(require) {
             });
 
             var publicKeysArmored = [pubkeyArmored];
-            var cleartextMessage = 'This message is prepended to your encrypted message and displayed in the clear even if your recipient does not speak PGP!';
 
             mailer.setPrivateKey({
                 privateKeyArmored: privKeyArmored,
@@ -119,8 +118,7 @@ define(function(require) {
                 mailer.send({
                     mail: mailObj,
                     encrypt: true,
-                    publicKeysArmored: publicKeysArmored,
-                    cleartextMessage: cleartextMessage
+                    publicKeysArmored: publicKeysArmored
                 }, function(err, rfcText) {
                     expect(err).to.not.exist;
                     expect(rfcText).to.exist;
