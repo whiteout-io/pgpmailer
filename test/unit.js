@@ -18,6 +18,7 @@
                 host: 'hello.world.com',
                 port: 1337,
                 auth: {},
+                ignoreTLS: false,
                 secure: true,
                 ca: ['trusty cert']
             };
