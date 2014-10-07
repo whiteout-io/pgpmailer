@@ -80,6 +80,7 @@
                 useSecureTransport: self._options.secure,
                 ignoreTLS: self._options.ignoreTLS,
                 ca: self._options.ca,
+                tlsWorkerPath: self._options.tlsWorkerPath,
                 auth: self._options.auth
             });
 

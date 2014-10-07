@@ -14,6 +14,7 @@ require.config({
         'smtpclient': '../node_modules/wo-smtpclient/src/smtpclient',
         'smtpclient-response-parser': '../node_modules/wo-smtpclient/src/smtpclient-response-parser',
         'tcp-socket': '../node_modules/wo-smtpclient/node_modules/tcp-socket/src/tcp-socket',
+        'tcp-socket-tls': '../node_modules/wo-smtpclient/node_modules/tcp-socket/src/tcp-socket-tls',
         'stringencoding': '../node_modules/wo-smtpclient/node_modules/wo-stringencoding/dist/stringencoding',
         'axe': '../node_modules/wo-smtpclient/node_modules/axe-logger/axe',
         'openpgp': 'lib/openpgp.min',
