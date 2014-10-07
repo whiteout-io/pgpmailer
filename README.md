@@ -11,6 +11,16 @@ This module orchestrates the following libraries to send PGP-encrypted messages:
 * [smtpclient](https://github.com/whiteout-io/smtp-client)
 * [pgpbuilder](https://github.com/whiteout-io/pgpbuilder)
 
+## TCPSocket API
+
+There is a [shim](https://github.com/whiteout-io/tcp-socket) that brings [Mozilla-flavored](https://developer.mozilla.org/en-US/docs/WebAPI/TCP_Socket) version of the [Raw Socket API](http://www.w3.org/TR/raw-sockets/) to other platforms.
+
+If you are on a platform that uses forge instead of a native TLS implementation (e.g. chrome.socket), you have to set the .oncert(pemEncodedCertificate) handler that passes the TLS certificate that the server presents. It can be used on a trust-on-first-use basis for subsequent connection. 
+
+If forge is used to handle TLS traffic, you may choose to handle the TLS-related load in a Web Worker. Please use tlsWorkerPath to point to `tcp-socket-tls-worker.js`!
+
+Please take a look at the [tcp-socket documentation](https://github.com/whiteout-io/tcp-socket) for more information!
+
 ## What can this library do?
 
 This library takes a plain-text message including attachments and transforms it into an [RFC 3156](http://tools.ietf.org/search/rfc3156) format. Here's a little primer about RFC 3156.
@@ -58,12 +68,14 @@ Here's what you do in you own app (and/or have a look at the `test/integration.j
         port: 465, // or whatever port you want to use
         auth: {
             user: 'YOUR USERNAME',
-            pass: 'YOUR PASSWORD'
+            pass: 'YOUR PASSWORD',
+            xoauth2: 'YOUR XOAUTH2 TOKEN' // (optional) If both password and xoauth2 token are set, the token is preferred.
         },
+        ignoreTLS: false, // if set to true, do not issue STARTTLS even if the server supports it
+        requireTLS: true // if set to true, always use STARTTLS before authentication even if the host does not advertise it. If STARTTLS fails, do not try to authenticate the user
         secureConnection: true, // because why wouldn't you?
-        tls: {
-            ca: ['PIN THE CERTIFICATE OF YOUR PROVIDER OF CHOICE'] // because why wouldn't you?
-        }
+        ca: 'PIN THE CERTIFICATE OF YOUR PROVIDER OF CHOICE', // (optional) Only in conjunction with tcp-socket if you use TLS with forge. Pins a PEM-encoded certificate as a string. Please refer to the tcp-socket documentation for more information!
+        tlsWorkerPath: 'path/to/' // (optional) Only in conjunction with tcp-socket if you use TLS with forge. . Indicates where the file for the TLS Web Worker is located. Please refer to the tcp-socket documentation for more information!
     });
 
     // set your private key to sign your message
