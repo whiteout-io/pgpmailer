@@ -33,8 +33,7 @@ define(function(require) {
                 secureConnection: true,
                 tls: {
                     ca: ['trusty cert']
-                },
-                pgpWorkerPath: 'lib/openpgp.worker.js'
+                }
             };
 
             privKey = '-----BEGIN PGP PRIVATE KEY BLOCK-----\r\n' +
@@ -168,23 +167,24 @@ define(function(require) {
                         var pgpMessageObj = openpgp.message.readArmored(ct);
                         var publicKeyObj = openpgp.key.readArmored(pubkeyArmored).keys[0];
 
-                        var decrypted = openpgp.decryptAndVerifyMessage(mailer._pgpbuilder._privateKey, [publicKeyObj], pgpMessageObj);
-                        expect(decrypted).to.exist;
-                        expect(decrypted.signatures[0].valid).to.be.true;
-                        expect(decrypted.text).to.exist;
+                        openpgp.decryptAndVerifyMessage(mailer._pgpbuilder._privateKey, [publicKeyObj], pgpMessageObj).then(function(decrypted) {
+                            expect(decrypted).to.exist;
+                            expect(decrypted.signatures[0].valid).to.be.true;
+                            expect(decrypted.text).to.exist;
 
-                        parser = new MailParser();
-                        parser.on('end', function(parsedMail) {
-                            expect(parsedMail).to.exist;
-                            expect(parsedMail.text.replace(/\n/g, '')).to.equal(body);
-                            var attachmentBinStr = parsedMail.attachments[0].content.toString('binary');
-                            var attachmentPayload = asciiToUInt8Array(attachmentBinStr);
-                            expect(attachmentPayload.length).to.equal(expectedAttachmentPayload.length);
-                            expect(attachmentPayload).to.deep.equal(expectedAttachmentPayload);
+                            parser = new MailParser();
+                            parser.on('end', function(parsedMail) {
+                                expect(parsedMail).to.exist;
+                                expect(parsedMail.text.replace(/\n/g, '')).to.equal(body);
+                                var attachmentBinStr = parsedMail.attachments[0].content.toString('binary');
+                                var attachmentPayload = asciiToUInt8Array(attachmentBinStr);
+                                expect(attachmentPayload.length).to.equal(expectedAttachmentPayload.length);
+                                expect(attachmentPayload).to.deep.equal(expectedAttachmentPayload);
 
-                            done();
+                                done();
+                            });
+                            parser.end(decrypted.text);
                         });
-                        parser.end(decrypted.text);
                     });
                     parser.end(sentRFCMessage);
                 };
@@ -197,8 +197,10 @@ define(function(require) {
                     smtpclient: smtpMock
                 }, cb);
 
-                smtpMock.onidle();
-                smtpMock.onready();
+                setTimeout(function() {
+                    smtpMock.onidle();
+                    smtpMock.onready();
+                }, 0);
             });
         });
     });
