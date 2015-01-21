@@ -9,7 +9,7 @@
     "type": "git",
     "url": "http://github.com/whiteout-io/pgpmailer.git"
   },
-  "version": "0.7.0",
+  "version": "0.8.0",
   "licenses": [{
     "type": "MIT",
     "url": "http://github.com/whiteout-io/pgpmailer/blob/master/LICENSE"
@@ -23,7 +23,7 @@
   },
   "dependencies": {
     "pgpbuilder": "~0.5.0",
-    "wo-smtpclient": "~0.5.0"
+    "wo-smtpclient": "~0.6.0"
   },
   "devDependencies": {
     "openpgp": "~0.8.1",
