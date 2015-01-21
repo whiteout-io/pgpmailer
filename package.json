@@ -23,7 +23,7 @@
   },
   "dependencies": {
     "pgpbuilder": "~0.5.0",
-    "wo-smtpclient": "https://github.com/whiteout-io/smtpclient/tarball/dev/WO-765"
+    "wo-smtpclient": "~0.6.0"
   },
   "devDependencies": {
     "openpgp": "~0.8.1",
