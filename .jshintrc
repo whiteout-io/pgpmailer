@@ -18,6 +18,8 @@
 	"unused": true,
 
 	"globals": {
+		"ES6Promise": true,
+		"Promise": true,
 		"console": true,
 		"define": true,
 		"describe": true,
