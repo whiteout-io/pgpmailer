@@ -7,8 +7,6 @@
         module.exports = factory(require('pgpbuilder'), require('wo-smtpclient'));
     }
 }(function(PgpBuilder, SmtpClient) {
-    var PgpMailer;
-
     /**
      * Constructor for the high level api.
      * @param {Number} options.port Port is the port to the server (defaults to 25 on non-secure and to 465 on secure connection).
@@ -18,7 +16,7 @@
      * @param {Boolean} options.secureConnection Indicates if the connection is using TLS or not
      * @param {String} options.tls Further optional object for tls.connect, e.g. { ca: 'PIN YOUR CA HERE' }
      */
-    PgpMailer = function(options, builder) {
+    var PgpMailer = function(options, builder) {
         this._options = options;
         this._pgpbuilder = builder || new PgpBuilder(options);
     };
@@ -29,8 +27,8 @@
      * @param {String} options.passphrase The passphrase to encrypt options.armoredPrivateKey
      * @param {Function} callback(error) Indicates that the private key has been set, or provides error information
      */
-    PgpMailer.prototype.setPrivateKey = function(options, callback) {
-        this._pgpbuilder.setPrivateKey(options, callback);
+    PgpMailer.prototype.setPrivateKey = function(options) {
+        return this._pgpbuilder.setPrivateKey(options);
     };
 
     /**
@@ -46,100 +44,81 @@
      * @param {Array} options.mail.attachments (optional) Array of attachment objects with filename {String}, content {Uint8Array}, and mimeType {String}
      * @param {Boolean} options.mail.encrypted Indicating if the mail is already encrypted
      * @param {Array} options.publicKeysArmored The public keys with which the message should be encrypted
-     * @param {Function} callback(error) Indicates that the mail has been sent, or gives information in case an error occurred.
+     *
+     * * @return {Promise<String>} Resolves with the mail source when the mail has been sent
      */
-    PgpMailer.prototype.send = function(options, callback) {
+    PgpMailer.prototype.send = function(options) {
         var self = this;
 
-        if (options.encrypt) {
-            if (!options.mail.encrypted) {
-                self._pgpbuilder.encrypt(options, function(error) {
-                    if (error) {
-                        callback(error);
+        return (function() {
+            if (options.encrypt) {
+                if (!options.mail.encrypted) {
+                    return self._pgpbuilder.encrypt(options).then(function() {
+                        return self._pgpbuilder.buildEncrypted(options);
+                    });
+                }
+
+                return self._pgpbuilder.buildEncrypted(options);
+            }
+
+            return self._pgpbuilder.buildSigned(options);
+        })().then(function(obj) {
+            return new Promise(function(resolve, reject) {
+                var smtp = options.smtpclient || new SmtpClient(self._options.host, self._options.port, {
+                    useSecureTransport: self._options.secure,
+                    ignoreTLS: self._options.ignoreTLS,
+                    ca: self._options.ca,
+                    tlsWorkerPath: self._options.tlsWorkerPath,
+                    auth: self._options.auth
+                });
+
+                smtp.oncert = self.onCert;
+
+                smtp.onerror = function(error) {
+                    reject(error);
+                };
+
+                smtp.onidle = function() {
+                    // remove idle listener to prevent infinite loop
+                    smtp.onidle = function() {};
+                    // send envelope
+                    smtp.useEnvelope(obj.smtpInfo);
+                };
+
+                smtp.onready = function(failedRecipients) {
+                    if (failedRecipients && failedRecipients.length > 0) {
+                        smtp.quit();
+                        reject(new Error('Failed recipients: ' + JSON.stringify(failedRecipients)));
                         return;
                     }
 
-                    self._pgpbuilder.buildEncrypted(options, onBuildFinished);
-                });
-                return;
-            }
+                    // send rfc body
+                    smtp.end(obj.rfcMessage);
+                };
 
-            self._pgpbuilder.buildEncrypted(options, onBuildFinished);
-            return;
-        }
+                smtp.ondone = function(success) {
+                    if (!success) {
+                        smtp.quit();
+                        reject(new Error('Sent message was not queued successfully by SMTP server!'));
+                        return;
+                    }
 
-        self._pgpbuilder.buildSigned(options, onBuildFinished);
+                    // in some cases node.net throws an exception when we quit() the smtp client,
+                    // but the mail was already sent successfully, so we can ignore this error safely
+                    smtp.onerror = console.error;
+                    smtp.quit();
 
-        function onBuildFinished(error, rfc, envelope) {
-            if (error) {
-                callback(error);
-                return;
-            }
+                    resolve(obj.rfcMessage); // done!
+                };
 
-            var smtp = options.smtpclient || new SmtpClient(self._options.host, self._options.port, {
-                useSecureTransport: self._options.secure,
-                ignoreTLS: self._options.ignoreTLS,
-                ca: self._options.ca,
-                tlsWorkerPath: self._options.tlsWorkerPath,
-                auth: self._options.auth
+                // connect and wait for idle
+                smtp.connect();
             });
-
-            smtp.oncert = self.onCert;
-
-            smtp.onerror = done;
-            smtp.onidle = function() {
-                // remove idle listener to prevent infinite loop
-                smtp.onidle = function() {};
-                // send envelope
-                smtp.useEnvelope(envelope);
-            };
-
-            smtp.onready = function(failedRecipients) {
-                if (failedRecipients && failedRecipients.length > 0) {
-                    smtp.quit();
-                    done({
-                        errMsg: 'Failed recipients: ' + JSON.stringify(failedRecipients)
-                    });
-                    return;
-                }
-
-                // send rfc body
-                smtp.end(rfc);
-            };
-
-            smtp.ondone = function(success) {
-                if (!success) {
-                    smtp.quit();
-                    done({
-                        errMsg: 'Sent message was not queued successfully by SMTP server!'
-                    });
-                    return;
-                }
-
-                // in some cases node.net throws an exception when we quit() the smtp client,
-                // but the mail was already sent successfully, so we can ignore this error safely
-                smtp.onerror = console.error;
-                smtp.quit();
-
-                done(null, rfc);
-            };
-
-            // connect and wait for idle
-            smtp.connect();
-        }
-
-        function done(err, result) {
-            if (err && self.onError) {
-                // invoke optional error handler
-                self.onError(err);
-            }
-
-            callback(err, result);
-        }
+        });
     };
 
-    PgpMailer.prototype.encrypt = function(options, callback) {
-        this._pgpbuilder.encrypt(options, callback);
+    PgpMailer.prototype.encrypt = function(options) {
+        return this._pgpbuilder.encrypt(options);
     };
 
     return PgpMailer;
