@@ -22,7 +22,7 @@
     "test": "grunt"
   },
   "dependencies": {
-    "pgpbuilder": "https://github.com/whiteout-io/pgpbuilder/tarball/dev/WO-795",
+    "pgpbuilder": "~0.6.0",
     "wo-smtpclient": "~0.6.0"
   },
   "devDependencies": {
