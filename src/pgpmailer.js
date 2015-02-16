@@ -50,21 +50,19 @@
     PgpMailer.prototype.send = function(options) {
         var self = this;
 
-        return new Promise(function(resolve, reject) {
+        return (function() {
             if (options.encrypt) {
                 if (!options.mail.encrypted) {
-                    self._pgpbuilder.encrypt(options).then(function() {
-                        resolve(self._pgpbuilder.buildEncrypted(options));
-                    }).catch(reject);
-                    return;
+                    return self._pgpbuilder.encrypt(options).then(function() {
+                        return self._pgpbuilder.buildEncrypted(options);
+                    });
                 }
 
-                resolve(self._pgpbuilder.buildEncrypted(options));
-                return;
+                return self._pgpbuilder.buildEncrypted(options);
             }
 
-            resolve(self._pgpbuilder.buildSigned(options));
-        }).then(function(obj) {
+            return self._pgpbuilder.buildSigned(options);
+        })().then(function(obj) {
             return new Promise(function(resolve, reject) {
                 var smtp = options.smtpclient || new SmtpClient(self._options.host, self._options.port, {
                     useSecureTransport: self._options.secure,
