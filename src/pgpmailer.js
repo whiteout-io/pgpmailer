@@ -67,6 +67,7 @@
                 var smtp = options.smtpclient || new SmtpClient(self._options.host, self._options.port, {
                     useSecureTransport: self._options.secure,
                     ignoreTLS: self._options.ignoreTLS,
+                    requireTLS: self._options.requireTLS,
                     ca: self._options.ca,
                     tlsWorkerPath: self._options.tlsWorkerPath,
                     auth: self._options.auth
